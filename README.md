@@ -1,6 +1,19 @@
 # EmbeddedDriversDevptSTM32F446xx
 
-Development drivers for STM32F446xx as practice and study of this Embedded micro controller
+Development drivers for STM32F446xx as practice and study of the ARM based STM32F446 Embedded Micro Controller
+Done while taking Udemy course to brush up my skills.
+In this project I will develop drivers for STM64F446re (Arm corext 4 based MCU, by ST Microelectronics).
+The drivers will be developed from scratch, without using any of the supplied drivers by ST Microelectronics.
+Some of the drivers that are planned to be developed as excercise:
+1. GPIOs
+	Input/Output port set/clear/read.
+	Support for various ports configurations e.g. speed, otput type, pull-up/pull down, etc.
+	Interrupts support - (Also with interrupts support initiated from GPIO ports, including the EXTI (External Interrupts) peripheral and the Cortex's NVIC (Nested Interrupts Vector COntroller)).
+2. SPI
+3. I2C
+4. UART / USART
+ 	
+
 
 Tested on STM32 Nucleo-64 development boart of ST Microelectronics - https://www.st.com/en/evaluation-tools/nucleo-f446re.html with STM64F446re MCU.
 

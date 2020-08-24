@@ -2,7 +2,7 @@
  * 002LEDButton.c
  *
  *  Created on: 22 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 

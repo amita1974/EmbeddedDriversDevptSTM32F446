@@ -2,7 +2,7 @@
  * utils.h
  *
  *  Created on: 23 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 #ifndef INC_UTILS_H_

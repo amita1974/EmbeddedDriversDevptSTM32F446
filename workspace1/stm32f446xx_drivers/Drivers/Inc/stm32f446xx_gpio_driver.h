@@ -2,7 +2,7 @@
  * stm32f446xx_gpio_driver.h
  *
  *  Created on: 20 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 #ifndef INC_STM32F446XX_GPIO_DRIVER_H_
@@ -10,7 +10,6 @@
 
 #include "stm32f446xx.h"
 #include <stdint.h>
-#include "utils.h"
 
 #ifdef DEBUG
 #include <assert.h>

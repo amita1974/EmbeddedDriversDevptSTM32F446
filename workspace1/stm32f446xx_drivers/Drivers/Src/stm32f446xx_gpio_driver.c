@@ -2,7 +2,7 @@
  * stm32f446xx_gpio_driver.c
  *
  *  Created on: 20 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 #include "stm32f446xx_gpio_driver.h"

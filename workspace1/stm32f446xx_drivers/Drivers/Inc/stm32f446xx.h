@@ -2,12 +2,13 @@
  * stm32f446xx.h
  *
  *  Created on: Aug 20, 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 #ifndef INC_STM32F446XX_H_
 #define INC_STM32F446XX_H_
 
+#include "utils.h"
 #include <stdint.h>
 
 /* ********************************** Processor Specific Details ******************************** */

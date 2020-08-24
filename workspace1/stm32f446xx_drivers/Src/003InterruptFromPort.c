@@ -2,7 +2,7 @@
  * 003InterruptFromPort.c
  *
  *  Created on: 23 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 #include "stm32f446xx.h"

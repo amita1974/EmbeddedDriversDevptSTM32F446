@@ -2,7 +2,7 @@
  * 001LEDToggle.c
  *
  *  Created on: 21 באוג׳ 2020
- *      Author: amita
+ *      Author: Amit Alon
  */
 
 
