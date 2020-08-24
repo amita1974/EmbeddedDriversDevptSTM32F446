@@ -1,8 +1,10 @@
 # EmbeddedDriversDevptSTM32F446xx
 
-Development drivers for STM32F446xx as practice and study of this controller
+Development drivers for STM32F446xx as practice and study of this Embedded micro controller
 
 Tested on STM32 Nucleo-64 development boart of ST Microelectronics - https://www.st.com/en/evaluation-tools/nucleo-f446re.html with STM64F446re MCU.
+
+
 
 Online resources used for the development of the drivers:
 
