@@ -8,6 +8,8 @@ Online resources used for the development of the drivers:
 
 Development Board: https://www.st.com/en/evaluation-tools/nucleo-f446re.html#resource
 
+Data Brief https://www.st.com/resource/en/data_brief/nucleo-f446re.pdf
+
 STM32F446RE resources - https://www.st.com/en/microcontrollers-microprocessors/stm32f446.html#resource
 
 Reference Manual - https://www.st.com/resource/en/reference_manual/dm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
