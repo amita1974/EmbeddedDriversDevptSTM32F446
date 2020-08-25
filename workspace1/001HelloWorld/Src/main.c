@@ -23,9 +23,28 @@
 
 #include <stdio.h>
 
+/*
+ * This exercise is used in order to enable the printf mechanism for debugging.
+ *
+ * To enable printf:
+ * In the "debug configurations" (located under the "debug button's menu", int the debugger tab, select enable "serial wire viewer"
+ * Add the code from here:
+ * https://github.com/niekiran/Embedded-C/blob/master/All_source_codes/target/itm_send_data.c
+ *
+ * to syscalls.c (located in the src directory), immediately after the includes, and modifu __write frunction to call
+ * ITM_SendChar()
+ * instead of
+ * __io_putchar()
+ * (Keep the same parameters as was in use by __io_putchar())
+ * In the debug perspective select window->showView->SWV->SWV-ITM data console.
+ * In that console window  select configuration and then enable port 0.
+ * Press on the start button of the SWV ITM Data console window and run the code with the printf.
+ * prints should show on the SWV ITM console window.
+ *
+ */
 int main(void)
 {
-	printf("Hello world !!! this is a butiful day!\n");
+	printf("Hello world!!! this is a beautiful day!\n");
     /* Loop forever */
 	for(;;);
 }
