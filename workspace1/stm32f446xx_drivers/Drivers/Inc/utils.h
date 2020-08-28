@@ -1,7 +1,7 @@
 /*
  * utils.h
  *
- *  Created on: 23 באוג׳ 2020
+ *  Created on: Aug 23 2020
  *      Author: Amit Alon
  */
 

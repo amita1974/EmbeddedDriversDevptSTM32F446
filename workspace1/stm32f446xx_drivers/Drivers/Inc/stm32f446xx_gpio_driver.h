@@ -1,7 +1,7 @@
 /*
  * stm32f446xx_gpio_driver.h
  *
- *  Created on: 20 באוג׳ 2020
+ *  Created on: Aug 20 2020
  *      Author: Amit Alon
  */
 
@@ -17,7 +17,7 @@
 
 /* Configuration structure for a GPIO pin */
 typedef struct {
-	uint8_t GPIO_PinNumber;			/*!< Possible values from @GPIO_PIN_NUMBER >*/
+	uint8_t GPIO_PinNumber;			/*!< Possible values from @GPIO_PIN_NUM >*/
 	uint8_t GPIO_PinMode;			/*!< Possible values from @GPIO_PIN_MODE >*/
 	uint8_t GPIO_PinSpeed;			/*!< Possible values from @GPIO_PIN_SPEED >*/
 	uint8_t GPIO_PinPuPdControl;	/*!< Possible values from @GPIO_PU_PD >*/
