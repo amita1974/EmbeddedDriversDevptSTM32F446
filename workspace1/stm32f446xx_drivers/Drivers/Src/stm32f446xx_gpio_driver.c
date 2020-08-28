@@ -87,6 +87,10 @@ void GPIO_Init(GPIO_Handle_t* pGPIOHanlde)
 	/* Configure the mode of the GPIO pin */
 	uint32_t temp = 0;
 	uint8_t reg_bit_offset;
+	//TODO: consider adding the option to mask all interrupt while the configuration is done and restore the interrupts global mask state once done with the configuration
+	// (See PRIMASK register on the ARM Coretex MCU UG - "Core registers" chapter.
+	// Also consider adding a macro/function to allow enable/disable all interrupts in order to allow configuration of several GPIOs and only once done enable the general IRQ
+
 	reg_bit_offset = (2 * pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber); // offset for 2 bits configuration value per port
 	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_ANALOG) {
 		temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode << reg_bit_offset);
