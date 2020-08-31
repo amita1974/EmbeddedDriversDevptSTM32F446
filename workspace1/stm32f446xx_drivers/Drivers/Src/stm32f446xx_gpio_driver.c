@@ -87,8 +87,8 @@ void GPIO_Init(GPIO_Handle_t* pGPIOHanlde)
 	/* Configure the mode of the GPIO pin */
 	uint32_t temp = 0;
 	uint8_t reg_bit_offset;
-	reg_bit_offset = (2 * pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber); // offset for 2 bits configuration value per port
-	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_ANALOG) {
+	reg_bit_offset = (2 * pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum); // offset for 2 bits configuration value per port
+	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode <= GPIO_PINMODE__ANALOG) {
 		temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode << reg_bit_offset);
 		pGPIOHanlde->pGPIOx->MODER &= ~(0x3 << reg_bit_offset);
 		pGPIOHanlde->pGPIOx->MODER |= temp;
@@ -98,59 +98,59 @@ void GPIO_Init(GPIO_Handle_t* pGPIOHanlde)
 		/* Peripheral related configurations */
 		/* GPIO peripheral interrupt related modes. */
 		/* 1. Set the interrupt detection as Rising / Falling / Rising+Falling edge detection. */
-		if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_INT_FEI) {
+		if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_PINMODE__INT_FEI) {
 			/* Configure the FTSR to detect Falling edge and clear the Rising edged detection in case it was already set */
-			EXTI->FTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
-			EXTI->RTSR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
-		} else if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_INT_REI) {
+			EXTI->FTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
+			EXTI->RTSR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
+		} else if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_PINMODE__INT_REI) {
 			/* Configure the RTSR to detect Rising edge and clear the Falling edged detection in case it was already set */
-			EXTI->RTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
-			EXTI->FTSR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
-		} else if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_INT_RFEI) {
+			EXTI->RTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
+			EXTI->FTSR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
+		} else if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_PINMODE__INT_RFEI) {
 			/* Configure both FTSR and RTSR to detect both rising and falling edge*/
-			EXTI->RTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
-			EXTI->FTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
+			EXTI->RTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
+			EXTI->FTSR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
 		}
 		/* SYSCFG peripheral related configurations */
 		/* 2. Configure the GPIO port selection in SYSCFG_EXTICR, so that the input pin of the correct port will cause the interrupt */
 		SYSCFG_PCLK_EN();
-		uint8_t syscfg_exticr_reg_idx = pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber / 4;
-		uint8_t	syscfg_exticr_bit_offset = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber % 4) * 4;
+		uint8_t syscfg_exticr_reg_idx = pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum / 4;
+		uint8_t	syscfg_exticr_bit_offset = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum % 4) * 4;
 		SYSCFG->EXTICR[syscfg_exticr_reg_idx] &= ~(0x0F << syscfg_exticr_bit_offset);
 		SYSCFG->EXTICR[syscfg_exticr_reg_idx] |= (GPIO_BASE_ADDR_TO_PORT_CODE(pGPIOHanlde) << syscfg_exticr_bit_offset);
 
 		/* EXTI peripheral related configuration */
 		/* 3. Enable interrupt delivery from peripheral to the processor using the IMR (Interrupt Mask register in the EXTI module). */
-		EXTI->IMR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
+		EXTI->IMR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
 	}
 
 	/* Configure the PU/PD resistor */
-	temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinPuPdControl << reg_bit_offset);
+	temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_PuPdControl << reg_bit_offset);
 	pGPIOHanlde->pGPIOx->PUPDR &= ~(0x3 << reg_bit_offset);
 	pGPIOHanlde->pGPIOx->PUPDR |= temp;
 
 	// Configurations relevant ONLY for output pins
-	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_OUT) {
+	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_PINMODE__OUT) {
 		/* Configure the Speed */
-		temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinSpeed << reg_bit_offset);
+		temp = (pGPIOHanlde->GPIO_PinConfig.GPIO_OutputSpeed << reg_bit_offset);
 		pGPIOHanlde->pGPIOx->OSPEEDR &= ~(0x3 << reg_bit_offset);
 		pGPIOHanlde->pGPIOx->OSPEEDR |= temp;
 
 		/* Configure the OTYPE (output type) */
-		if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinOPType) {
-			pGPIOHanlde->pGPIOx->OTYPR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
+		if (pGPIOHanlde->GPIO_PinConfig.GPIO_OPType) {
+			pGPIOHanlde->pGPIOx->OTYPR |= (1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
 		} else {
-			pGPIOHanlde->pGPIOx->OTYPR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber);
+			pGPIOHanlde->pGPIOx->OTYPR &= ~(1 << pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum);
 		}
 	}
 
 	/* Configure the alternate functionality */
-	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode < GPIO_MODE_ALTFN) {
-		uint8_t GPIO_AFR_reg_h_l = pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber / 8; // 0: 0..7, 1: 8..15.
-		reg_bit_offset = ((pGPIOHanlde->GPIO_PinConfig.GPIO_PinNumber % 8) * 4);
-		uint32_t GPIO_AFR_reg_pin_val = (pGPIOHanlde->GPIO_PinConfig.GPIO_PinAltFunMode << reg_bit_offset);
-		pGPIOHanlde->pGPIOx->AFR[GPIO_AFR_reg_h_l] &= ~(0x0f << reg_bit_offset);
-		pGPIOHanlde->pGPIOx->AFR[GPIO_AFR_reg_h_l] |= GPIO_AFR_reg_pin_val;
+	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode < GPIO_PINMODE__ALTFN) {
+		uint8_t GPIO_AFR_RegX = pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum / 8; // 0: 0..7, 1: 8..15.
+		reg_bit_offset = ((pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum % 8) * 4);
+		uint32_t GPIO_AFR_reg_pin_val = (pGPIOHanlde->GPIO_PinConfig.GPIO_AltFunMode << reg_bit_offset);
+		pGPIOHanlde->pGPIOx->AFR[GPIO_AFR_RegX] &= ~(0x0f << reg_bit_offset);
+		pGPIOHanlde->pGPIOx->AFR[GPIO_AFR_RegX] |= GPIO_AFR_reg_pin_val;
 	}
 
 	// TODO: Add support for Analog ports
@@ -368,7 +368,7 @@ void GPIO_IRQHandle(uint8_t PinNum)
 //			while(1) {
 //				;
 //			}
-		GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM_5);
+		GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM__5);
 		delay(4);
 	}
 }

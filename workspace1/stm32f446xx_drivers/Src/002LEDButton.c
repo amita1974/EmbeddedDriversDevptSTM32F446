@@ -13,43 +13,40 @@
  */
 
 #include "stm32f446xx.h"
+#include "utils.h"
 #define BUTTON_PRESSED	0
 
-void delay(void) {
-	for (uint32_t j = 0; j < 500000; j++);
-}
 
 int main (void) {
 	GPIO_Handle_t GpioLED;
 	GpioLED.pGPIOx = GPIOA;
-	GpioLED.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NUM_5;
-	GpioLED.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_OUT;
-	GpioLED.GPIO_PinConfig.GPIO_PinOPType = GPIO_OP_TYPE_PP;
-	GpioLED.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OP_SPEED_FAST;
-	GpioLED.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PU_PD_NONE;
+	GpioLED.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__5;
+	GpioLED.GPIO_PinConfig.GPIO_PinMode = GPIO_PINMODE__OUT;
+	GpioLED.GPIO_PinConfig.GPIO_OPType = GPIO_OP_TYPE__PP;
+	GpioLED.GPIO_PinConfig.GPIO_OutputSpeed = GPIO_OP_SPEED__FAST;
+	GpioLED.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__NONE;
 
 	GPIO_Handle_t GpioUserButton;
 	GpioUserButton.pGPIOx = GPIOC;
-	GpioUserButton.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NUM_13;
-	GpioUserButton.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
-	GpioUserButton.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OP_SPEED_FAST;
-	GpioUserButton.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PU_PD_NONE;
+	GpioUserButton.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__13;
+	GpioUserButton.GPIO_PinConfig.GPIO_PinMode = GPIO_PINMODE__IN;
+	GpioUserButton.GPIO_PinConfig.GPIO_OutputSpeed = GPIO_OP_SPEED__FAST;
+	GpioUserButton.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__NONE;
 
 	GPIOA_PCLK_EN();
 	GPIOC_PCLK_EN();
 	GPIO_Init(&GpioLED);
 	GPIO_Init(&GpioUserButton);
 
-	//uint8_t button_state = GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM_13);
+	//uint8_t button_state = GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM__13);
 	while (1) {
-		if (GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM_13) == BUTTON_PRESSED) {
-			GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM_5);
-			delay();
+		if (GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM__13) == BUTTON_PRESSED) {
+			GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM__5);
+			delay(1);
 		}
-//		if (GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM_13) != button_state) {
-//			GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM_5);
-//			button_state = !button_state;
-//			delay();
+//		if (GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NUM__13) != button_state) {
+//			GPIO_ToggleOutputPin(GPIOA, GPIO_PIN_NUM__5);
+//			delay(1);
 //		}
 	}
 
