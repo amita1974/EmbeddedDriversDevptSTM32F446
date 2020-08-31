@@ -14,12 +14,12 @@
  * Peripheral clock setup
  */
 /**************************************************************
- * @fn			- GPIO_PeriClockCOntrol
+ * @fn			- GPIO_PeriClockControl
  *
  * @brief		- This function enables or disables Peripheral clock for given GPIO port.
  *
- * @param[in]	- Base address of the GPIO Port Peripheral
- * @param[in]	- ENABLE or DISABLE macros
+ * @param[in]	- Base address of the GPIO Port peripheral
+ * @param[in]	- ENABLE or DISABLE
  *
  * @return		- none
  *

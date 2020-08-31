@@ -102,6 +102,10 @@
 #define IWDG_BASEADDR			(APB1PERIPH_BASEADDR + 0x3000U)
 #define SPI2_OR_I2S2_BASEADDR	(APB1PERIPH_BASEADDR + 0x3800U)
 #define SPI3_OR_I2S3_BASEADDR	(APB1PERIPH_BASEADDR + 0x3C00U)
+#define SPI2_BASEADDR			(SPI2_OR_I2S2_BASEADDR)
+#define SPI3_BASEADDR			(SPI3_OR_I2S3_BASEADDR)
+#define I2S2_BASEADDR			(SPI2_OR_I2S2_BASEADDR)
+#define I2S3_BASEADDR			(SPI3_OR_I2S3_BASEADDR)
 #define SPDIF_RX_BASEADDR		(APB1PERIPH_BASEADDR + 0x4000U)
 #define USART2_BASEADDR			(APB1PERIPH_BASEADDR + 0x4400U)
 #define USART3_BASEADDR			(APB1PERIPH_BASEADDR + 0x4800U)
@@ -124,7 +128,7 @@
 #define ADC1_2_3_BASEADDR		(APB2PERIPH_BASEADDR + 0x2000U)
 #define SDMMC_BASEADDR			(APB2PERIPH_BASEADDR + 0x2C00U)
 #define SPI1_BASEADDR			(APB2PERIPH_BASEADDR + 0x3000U)
-#define SPI4 APB2_BASEADDR		(APB2PERIPH_BASEADDR + 0x3400U)
+#define SPI4_BASEADDR			(APB2PERIPH_BASEADDR + 0x3400U)
 #define SYSCFG_BASEADDR			(APB2PERIPH_BASEADDR + 0x3800U)
 #define EXTI_BASEADDR			(APB2PERIPH_BASEADDR + 0x3C00U)
 #define TIM9_BASEADDR			(APB2PERIPH_BASEADDR + 0x4000U)
@@ -150,6 +154,21 @@ typedef struct {
 	volatile uint32_t LCKR;		/*!< GPIO port configuration lock register, offset 0x1C */
 	volatile uint32_t AFR[2];	/*!< GPIO alternate function low registers, offset 0x20, 0x24 for AFRL and AFRH accordingly */
 } GPIO_RegDef_t;
+
+/*
+ * SPI and I2S registers
+ */
+typedef struct {
+	volatile uint32_t CR1;		/* !< SPI control register 1, offset 0x00 */
+	volatile uint32_t CR2;		/* !< SPI control register 2, offset 0x04 */
+	volatile uint32_t SR;		/* !< SPI status register, offset 0x08 */
+	volatile uint32_t DR;		/* !< SPI data register, offset 0x0C */
+	volatile uint32_t CRCPR;	/* !< SPI CRC polynomial register (not used in I2S mode), offset 0x10 */
+	volatile uint32_t RXCRCR;	/* !< SPI RX CRC register (not used in I2S mode), offset 0x14 */
+	volatile uint32_t TXCRCR;	/* !< SPI TX CRC register (not used in I2S mode), offset 0x18 */
+	volatile uint32_t I2SCFGR;	/* !< SPI_I2S configuration register, offset 0x1C */
+	volatile uint32_t I2SPR;	/* !< SPI_I2S prescaler register, offset 0x20 */
+} SPIAndI2s_RegDef_t;
 
 /*
  * RCC registers structure
@@ -228,6 +247,13 @@ typedef struct {
 #define GPIOF	((GPIO_RegDef_t*)GPIOF_BASEADDR)
 #define GPIOG	((GPIO_RegDef_t*)GPIOG_BASEADDR)
 #define GPIOH	((GPIO_RegDef_t*)GPIOH_BASEADDR)
+#define SPI1	((SPIAndI2s_RegDef_t*)SPI1_BASEADDR)
+#define SPI2	((SPIAndI2s_RegDef_t*)SPI2_BASEADDR)
+#define SPI3	((SPIAndI2s_RegDef_t*)SPI3_BASEADDR)
+#define SPI4	((SPIAndI2s_RegDef_t*)SPI4_BASEADDR)
+#define I2S2	((SPIAndI2s_RegDef_t*)I2S2_BASEADDR)
+#define I2S3	((SPIAndI2s_RegDef_t*)I2S3_BASEADDR)
+
 #define RCC		((RCC_RegDef_t*)RCC_BASEADDR)
 #define EXTI	((EXTI_RegDef_t*)EXTI_BASEADDR)
 #define SYSCFG	((SYSCFG_RegDef_t*)SYSCFG_BASEADDR)
@@ -261,6 +287,11 @@ typedef struct {
 #define GPIOF_REGS_RESET()	do { ( RCC->AHB1RSTR |= (0x1 << 5) ); ( RCC->AHB1RSTR &= ~(0x1 << 5) ); } while (0)
 #define GPIOG_REGS_RESET()	do { ( RCC->AHB1RSTR |= (0x1 << 6) ); ( RCC->AHB1RSTR &= ~(0x1 << 6) ); } while (0)
 #define GPIOH_REGS_RESET()	do { ( RCC->AHB1RSTR |= (0x1 << 7) ); ( RCC->AHB1RSTR &= ~(0x1 << 7) ); } while (0)
+
+#define SPI1_REGS_RESET()	do { ( RCC->APB2RSTR |= (0x1 << 12) ); ( RCC->APB2RSTR &= ~(0x1 << 12) ); } while (0)
+#define SPI2_REGS_RESET()	do { ( RCC->APB1RSTR |= (0x1 << 14) ); ( RCC->APB1RSTR &= ~(0x1 << 14) ); } while (0)
+#define SPI3_REGS_RESET()	do { ( RCC->APB1RSTR |= (0x1 << 15) ); ( RCC->APB1RSTR &= ~(0x1 << 15) ); } while (0)
+#define SPI4_REGS_RESET()	do { ( RCC->APB2RSTR |= (0x1 << 13) ); ( RCC->APB2RSTR &= ~(0x1 << 13) ); } while (0)
 
 /* Clock enable macros for I2Cx Peripherals */
 #define I2C1_PCLK_EN()	( RCC->APB1ENR |= (0x1 << 21) )
@@ -427,6 +458,45 @@ typedef struct {
 #define GPIO_PIN_SET	SET
 #define GPIO_PIN_RESET	RESET
 
+/* **********************************************
+ * Bit positions for SPI Peripheral registers
+ ************************************************ */
+#define SPI_CR1_CPHA_BIT_POS		0
+#define SPI_CR1_CPOL_BIT_POS		1
+#define SPI_CR1_MSTR_BIT_POS		2
+#define SPI_CR1_BR_BIT_POS			3
+#define SPI_CR1_SPE_BIT_POS			6
+#define SPI_CR1_LSB_FIRST_BIT_POS	7
+#define SPI_CR1_SSI_BIT_POS			8
+#define SPI_CR1_SSM_BIT_POS			9
+#define SPI_CR1_RX_ONLY_BIT_POS		10
+#define SPI_CR1_DFF_BIT_POS			11
+#define SPI_CR1_CRC_NEXT_BIT_POS	12
+#define SPI_CR1_CRC_EN_BIT_POS		13
+#define SPI_CR1_BIDI_OE_BIT_POS		14
+#define SPI_CR1_BIDI_MODE_BIT_POS	15
+
+#define SPI_CR2_RXDMAEN_BIT_POS		0
+#define SPI_CR2_TXDMAEN_BIT_POS		1
+#define SPI_CR2_SSOE_BIT_POS		2
+#define SPI_CR2_FRF_BIT_POS			4
+#define SPI_CR2_ERRIE_BIT_POS		5
+#define SPI_CR2_RXNEIE_BIT_POS		6
+#define SPI_CR2_TXEIE_BIT_POS		7
+
+#define SPI_SR_RXNE_BIT_POS			0
+#define SPI_SR_TXE_BIT_POS			1
+#define SPI_SR_CHSIDE_BIT_POS		2
+#define SPI_SR_UDR_BIT_POS			3
+#define SPI_SR_CRC_ERR_BIT_POS		4
+#define SPI_SR_MODF_BIT_POS			5
+#define SPI_SR_OVR_BIT_POS			6
+#define SPI_SR_BSY_BIT_POS			7
+#define SPI_SR_FRE_BIT_POS			8
+
+/* *********************************************** */
+
 #include "stm32f446xx_gpio_driver.h"
+#include "stm32f446xx_spi_driver.h"
 
 #endif /* INC_STM32F446XX_H_ */
