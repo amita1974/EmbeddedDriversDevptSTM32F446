@@ -73,12 +73,12 @@ typedef struct {
 #define SPI_SR_RXNE_BIT_MASK		(1 << SPI_SR_RXNE_BIT_POS)
 #define SPI_SR_TXE_BIT_MASK			(1 << SPI_SR_TXE_BIT_POS)
 #define SPI_SR_CHSIDE_BIT_MASK		(1 << SPI_SR_CHSIDE_BIT_POS)
-#define SPI_SR_UDR_BIT_PMASK		(1 << SPI_SR_UDR_BIT_POS)
+#define SPI_SR_UDR_BIT_MASK			(1 << SPI_SR_UDR_BIT_POS)
 #define SPI_SR_CRC_ERR_BIT_MASK		(1 << SPI_SR_CRC_ERR_BIT_POS)
-#define SPI_SR_MODF_BIT_PMASK		(1 << SPI_SR_MODF_BIT_POS)
-#define SPI_SR_OVR_BIT_PMASK		(1 << SPI_SR_OVR_BIT_POS)
-#define SPI_SR_BSY_BIT_PMASK		(1 << SPI_SR_BSY_BIT_POS)
-#define SPI_SR_FRE_BIT_PMASK		(1 << SPI_SR_FRE_BIT_POS)
+#define SPI_SR_MODF_BIT_MASK		(1 << SPI_SR_MODF_BIT_POS)
+#define SPI_SR_OVR_BIT_MASK			(1 << SPI_SR_OVR_BIT_POS)
+#define SPI_SR_BSY_BIT_MASK			(1 << SPI_SR_BSY_BIT_POS)
+#define SPI_SR_FRE_BIT_MASK			(1 << SPI_SR_FRE_BIT_POS)
 
 
 /* ***************************** */
@@ -115,15 +115,13 @@ void SPI_IRQHandle(SPI_Handle_t *pHandle);
  * Other Peripheral Control APIs
  */
 
-/*
- * SPI SSI set
- */
-void SPI_SSIConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t NSSPinSetOrReset);
 
 /*
- * SPI Peripheral setup
+ * Other SPI Peripheral control APIs
  */
 void SPI_PerControl (SPIAndI2s_RegDef_t * pSPIx, uint8_t EnOrDis);
+void SPI_SSIConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t NSSPinSetOrReset);
+void SPI_SSOEConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t SSOESetOrReset);
 // TODO: fill this with more functions as needed.
 
 

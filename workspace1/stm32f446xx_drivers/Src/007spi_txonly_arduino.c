@@ -1,12 +1,13 @@
 /*
  * 006spi_tx_test.c
  *
- *  Created on: Aug 31, 2020
+ *  Created on: Sep 1, 2020
  *      Author: Amit Alon
  */
 
 #include <string.h>
 #include "stm32f446xx.h"
+#include "utils.h"
 
 #define NUCLEO64_STM32F446RE
 
@@ -23,7 +24,7 @@ void SPIx_GPIOInits(void) {
 	SPIPins.GPIO_PinConfig.GPIO_AltFunMode = GPIO_AF__5;
 	SPIPins.GPIO_PinConfig.GPIO_OutputSpeed = GPIO_OP_SPEED__FAST;
 	SPIPins.GPIO_PinConfig.GPIO_OPType = GPIO_OP_TYPE__PP;
-	SPIPins.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__NONE;
+	SPIPins.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__PU;
 
 #ifdef NUCLEO64_STM32F446RE // development board
 	/*
@@ -48,10 +49,10 @@ void SPIx_GPIOInits(void) {
 	SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__5;
 	GPIO_Init(&SPIPins);
 
-	//// SPI2_NSS
-	//SPIPins.pGPIOx = GPIOB;
-	//SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__6;
-	//GPIO_Init(&SPIPins);
+	// SPI2_NSS
+	SPIPins.pGPIOx = GPIOB;
+	SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__6;
+	GPIO_Init(&SPIPins);
 #else // STM32F4DISCOVERY (STM32F407G-DISC1) development board
 	/*
 	 * Values for STM32F4DISCOVERY (STM32F407G-DISC1) board:
@@ -76,9 +77,9 @@ void SPIx_GPIOInits(void) {
 	SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__13;
 	GPIO_Init(&SPIPins);
 
-	//// SPI2_NSS
-	//SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__12;
-	//GPIO_Init(&SPIPins);
+	// SPI2_NSS
+	SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__12;
+	GPIO_Init(&SPIPins);
 #endif // Board based configuration
 
 }
@@ -92,11 +93,11 @@ void SPIx_Inits(void) {
 #endif // Board based configuration
 	SPIHandle.SPIConfig.SPI_BusConfig = SPI_BUS_CONFIG__FULL_DUPLEX;
 	SPIHandle.SPIConfig.SPI_DeviceMode = SPI_DVICE_MODE__MASTER;
-	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV2; // 8MHz clock
+	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV8; // 2MHz clock
 	SPIHandle.SPIConfig.SPI_CPOL = SPI_CPOL__CK_IDLE_LOW;
 	SPIHandle.SPIConfig.SPI_CPHA = SPI_CPHA__1ST_CLK_SAMPLE;
 	SPIHandle.SPIConfig.SPI_DFF = SPI_DFF__8_BITS;
-	SPIHandle.SPIConfig.SPI_SSM = SPI_SSM__SW; // Software Slave management enabled instead of the NSS pin
+	SPIHandle.SPIConfig.SPI_SSM = SPI_SSM__HW; // Software Slave management enabled instead of the NSS pin
 	SPI_Init(&SPIHandle);
 }
 
@@ -107,23 +108,34 @@ int main (void) {
 	 * DFF = 0 and also test with DFF = 1
 	 */
 
-	char user_data[] = "Hello world";
+	char user_data[] = "Hello world"; // in this program the user data should not exceed 255 bytes.
 	// set up the desired GPIOs to operate as interface pins of SPI_2 peripheral
 	SPIx_GPIOInits();
 	// Init the relevant SPI peripheral
 	SPIx_Inits();
 
-	// Once configured, enable the SPIx Peripheral
-	SPI_PerControl(SPIx, ENABLE);
+	SPI_SSOEConfig(SPIx, ENABLE);
 
+	while (1) {
+		// Once configured, enable the SPIx Peripheral
+		SPI_PerControl(SPIx, ENABLE);
 
-	// Send the data
-	SPI_DataTx(SPIx, (uint8_t*)user_data, strlen(user_data));
+		// Send the data
+		uint8_t data_len = strlen(user_data);
+		if (data_len > 255) {
+			// trim the transmitted data in case that it is larger than 255 bytes to the first 255 bytes
+			data_len = 255;
+		}
+		SPI_DataTx(SPIx, &data_len, 1);
+		SPI_DataTx(SPIx, (uint8_t*)user_data, data_len);
 
-	// Disable the SPIx Peripheral
-	SPI_PerControl(SPIx, DISABLE);
+		// Disable the SPIx Peripheral
+		SPI_PerControl(SPIx, DISABLE);
+		// TODO: The Arduino does not show indication that the SS pin goes high at this stage.
+		// Maybe the NSS(CS) pin is not the one that is exposed on the board, since this pin PA5 does not have SPI_CS
+		// in its alternate mode in the RM of the STM32, while the nucleo board documentation says that it is the SPI1_CS...
+		delay(5); // button replacement.
+	}
 
-	// busy wait at the end
-	while (1);
 	return 0;
 }

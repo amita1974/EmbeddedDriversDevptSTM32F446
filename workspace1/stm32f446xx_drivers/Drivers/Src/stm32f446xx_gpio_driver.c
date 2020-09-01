@@ -148,7 +148,7 @@ void GPIO_Init(GPIO_Handle_t* pGPIOHanlde)
 	}
 
 	/* Configure the alternate functionality */
-	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode < GPIO_PINMODE__ALTFN) {
+	if (pGPIOHanlde->GPIO_PinConfig.GPIO_PinMode == GPIO_PINMODE__ALTFN) {
 		uint8_t GPIO_AFR_RegX = pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum / 8; // 0: 0..7, 1: 8..15.
 		reg_bit_offset = ((pGPIOHanlde->GPIO_PinConfig.GPIO_PinNum % 8) * 4);
 		uint32_t GPIO_AFR_reg_pin_val = (pGPIOHanlde->GPIO_PinConfig.GPIO_AltFunMode << reg_bit_offset);

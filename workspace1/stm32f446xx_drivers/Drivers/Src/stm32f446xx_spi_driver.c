@@ -229,7 +229,7 @@ void SPI_DataRx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pRxBuff, uint32_t numBytesTo
  *
  * @return		- none
  *
- * @Note		- When using SSM = 1 and acting as Master the ping must be set to high in order to avoid SPI MODF Error
+ * @Note		- When using SSM = 1 and acting as Master the pin must be set to high in order to avoid SPI MODF Error
  *
  **************************************************************/
 void SPI_SSIConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t NSSPinSetOrReset) {
@@ -239,6 +239,33 @@ void SPI_SSIConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t NSSPinSetOrReset) {
 		pSPIx->CR1 &= ~(1 << SPI_CR1_SSI_BIT_POS);
 	}
 }
+
+
+/**************************************************************
+ * @fn			- SPI_SSOEConfig
+ *
+ * @brief		- Set the SSOE (Slave Select Output Enable) to fit the configuration of Master with SSM disabled (HW control).
+ * 				  This will cause the HW to automatically set the NSS pin to low as soon as the SPI peripheral will be enabled, and back to high when the SPI will be disabled.
+ * 				  (i.e. for SSM = 0, when SPE=1 NSS will be pulled to low and NSS will be high when SPE = 0)
+ * 				  For more details see "STM32F446xx Reference manual.pdf" at chapter "26.3.5 Slave select (NSS) pin management"
+ *
+ * @param[in]	- Pointer to the SPI peripheral's registers
+ * @param[in]	- GPIO_PIN_SET or GPIO_PIN_RESET
+ *
+ * @return		- none
+ *
+ * @Note		-
+ *
+ **************************************************************/
+void SPI_SSOEConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t SSOESetOrReset) {
+	if (SSOESetOrReset == SET) {
+		pSPIx->CR2 |= (1 << SPI_CR2_SSOE_BIT_POS);
+	} else {
+		pSPIx->CR2 &= ~(1 << SPI_CR2_SSOE_BIT_POS);
+	}
+}
+
+
 
 /**************************************************************
  * @fn			- SPI_PerControl
@@ -257,8 +284,20 @@ void SPI_PerControl (SPIAndI2s_RegDef_t * pSPIx, uint8_t EnOrDis) {
 	if (EnOrDis == ENABLE) {
 		pSPIx->CR1 |= (1 << SPI_CR1_SPE_BIT_POS);
 	} else {
-		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE_BIT_POS);
 		// TODO: See the important note about disable SPI procedure in the RM - Section "26.3.10 Procedure for disabling the SPI"
+		/*
+		 * from the RM:
+		 * The correct disable procedure is (except when receive-only mode is used):
+		 * 1. Wait until RXNE=1 to receive the last data.
+		 * 2. Wait until TXE=1 and then wait until BSY=0 before disabling the SPI.
+		 * 3. Read received data.
+		 */
+		// Currently only working with RX so implementing partial solution without the RXNE and data reading part. still left as TODO.
+
+		// wait until the TXE and BSY flags of the SPI will be cleared before turning of the SPI peripheral.
+		while (SPI_GetFlagStatus(pSPIx, SPI_SR_TXE_BIT_MASK) == FLAG_RESET);
+		while (SPI_GetFlagStatus(pSPIx, SPI_SR_BSY_BIT_MASK) == FLAG_SET);
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE_BIT_POS);
 		// and update the code to follow the described rules.
 	}
 }
