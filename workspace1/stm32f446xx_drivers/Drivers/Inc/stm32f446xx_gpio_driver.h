@@ -63,22 +63,22 @@ typedef enum {
 } GPIO_PinNum_t;
 
 typedef enum {
-	GPIO_AFR__0 = 0,
-	GPIO_AFR__1 = 1,
-	GPIO_AFR__2 = 2,
-	GPIO_AFR__3 = 3,
-	GPIO_AFR__4 = 4,
-	GPIO_AFR__5 = 5,
-	GPIO_AFR__6 = 6,
-	GPIO_AFR__7 = 7,
-	GPIO_AFR__8 = 8,
-	GPIO_AFR__9 = 9,
-	GPIO_AFR__10 = 10,
-	GPIO_AFR__11 = 11,
-	GPIO_AFR__12 = 12,
-	GPIO_AFR__13 = 13,
-	GPIO_AFR__14 = 14,
-	GPIO_AFR__15 = 15,
+	GPIO_AF__0 = 0,
+	GPIO_AF__1 = 1,
+	GPIO_AF__2 = 2,
+	GPIO_AF__3 = 3,
+	GPIO_AF__4 = 4,
+	GPIO_AF__5 = 5,
+	GPIO_AF__6 = 6,
+	GPIO_AF__7 = 7,
+	GPIO_AF__8 = 8,
+	GPIO_AF__9 = 9,
+	GPIO_AF__10 = 10,
+	GPIO_AF__11 = 11,
+	GPIO_AF__12 = 12,
+	GPIO_AF__13 = 13,
+	GPIO_AF__14 = 14,
+	GPIO_AF__15 = 15,
 } GPIO_AltFuncMode_t;
 
 /* Configuration structure for a GPIO pin */

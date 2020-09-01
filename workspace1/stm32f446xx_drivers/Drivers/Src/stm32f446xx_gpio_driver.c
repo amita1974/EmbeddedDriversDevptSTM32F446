@@ -84,6 +84,9 @@ void GPIO_PerClockControl (GPIO_RegDef_t * pGPIOx, uint8_t EnOrDis)
  **************************************************************/
 void GPIO_Init(GPIO_Handle_t* pGPIOHanlde)
 {
+	/* Enable the GPIO peripheral */
+	GPIO_PerClockControl(pGPIOHanlde->pGPIOx, ENABLE);
+
 	/* Configure the mode of the GPIO pin */
 	uint32_t temp = 0;
 	uint8_t reg_bit_offset;

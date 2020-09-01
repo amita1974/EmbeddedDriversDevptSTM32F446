@@ -51,8 +51,8 @@ typedef enum {
 } SPI_Cpha_t;
 
 typedef enum {
-	SPI_SSM__SW = 0,
-	SPI_SSM__HW,
+	SPI_SSM__HW = 0,
+	SPI_SSM__SW,
 } SPI_Ssm_t;
 
 typedef struct {
@@ -70,6 +70,15 @@ typedef struct {
 	SPI_Config_t SPIConfig;
 } SPI_Handle_t;
 
+#define SPI_SR_RXNE_BIT_MASK		(1 << SPI_SR_RXNE_BIT_POS)
+#define SPI_SR_TXE_BIT_MASK			(1 << SPI_SR_TXE_BIT_POS)
+#define SPI_SR_CHSIDE_BIT_MASK		(1 << SPI_SR_CHSIDE_BIT_POS)
+#define SPI_SR_UDR_BIT_PMASK		(1 << SPI_SR_UDR_BIT_POS)
+#define SPI_SR_CRC_ERR_BIT_MASK		(1 << SPI_SR_CRC_ERR_BIT_POS)
+#define SPI_SR_MODF_BIT_PMASK		(1 << SPI_SR_MODF_BIT_POS)
+#define SPI_SR_OVR_BIT_PMASK		(1 << SPI_SR_OVR_BIT_POS)
+#define SPI_SR_BSY_BIT_PMASK		(1 << SPI_SR_BSY_BIT_POS)
+#define SPI_SR_FRE_BIT_PMASK		(1 << SPI_SR_FRE_BIT_POS)
 
 
 /* ***************************** */
@@ -105,6 +114,16 @@ void SPI_IRQHandle(SPI_Handle_t *pHandle);
 /*
  * Other Peripheral Control APIs
  */
+
+/*
+ * SPI SSI set
+ */
+void SPI_SSIConfig(SPIAndI2s_RegDef_t *pSPIx, uint8_t NSSPinSetOrReset);
+
+/*
+ * SPI Peripheral setup
+ */
+void SPI_PerControl (SPIAndI2s_RegDef_t * pSPIx, uint8_t EnOrDis);
 // TODO: fill this with more functions as needed.
 
 
