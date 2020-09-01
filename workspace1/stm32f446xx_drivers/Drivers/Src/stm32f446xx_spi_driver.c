@@ -173,16 +173,25 @@ uint8_t SPI_GetFlagStatus (SPIAndI2s_RegDef_t *pSPIx, uint32_t FlagBitMask) {
  **************************************************************/
 void SPI_DataTx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pTxBuff, uint32_t numBytesToSend) {
 	while (numBytesToSend > 0) {
-		// 1. wait until TXE is empty
+		// 1. Wait until TXE is empty
+		// TODO: update the code to use interrupt instead of using busy wait.
 		//while (!(pSPIx->SR & (1 << SPI_SR_TXE_BIT_POS))); // Busy wait to send the data byte.
-		while (SPI_GetFlagStatus(pSPIx, SPI_SR_TXE_BIT_MASK) == FLAG_RESET); // TODO: update the code to continue using interrupt without using a busy wait.
+		while (SPI_GetFlagStatus(pSPIx, SPI_SR_TXE_BIT_MASK) == FLAG_RESET);
 
 		// 2. Write new data byte(s) according to the frame format, and decrement the number of bytes to send accordingly.
 		if (pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 			// 16 bit Data Frame Format
-			pSPIx->DR = *((uint16_t*)pTxBuff);
-			numBytesToSend -= 2;
-			(uint16_t*)pTxBuff++;
+			if (numBytesToSend > 1) {
+				pSPIx->DR = *((uint16_t*)pTxBuff);
+				numBytesToSend -= 2;
+				(uint16_t*)pTxBuff++;
+			} else {
+				// Last byte - write only 1 data byte into the 16 bit register leaving the value of the other 8 bits...
+				// ..as zero, in order to prevent writing garbage data in the last byte.
+				pSPIx->DR = *pTxBuff;
+				numBytesToSend--;
+				pTxBuff++;
+			}
 		} else {
 			// 8 bit Data Frame Format
 			pSPIx->DR = *pTxBuff;
