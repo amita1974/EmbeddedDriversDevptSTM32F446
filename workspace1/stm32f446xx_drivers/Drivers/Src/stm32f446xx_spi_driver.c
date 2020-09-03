@@ -5,6 +5,7 @@
  *      Author: AA
  */
 
+#include <stdio.h>
 #include "stm32f446xx_spi_driver.h"
 
 /*
@@ -177,8 +178,11 @@ void SPI_DataTx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
 		// TODO: update the code to use interrupt instead of using busy wait.
 		//while (!(pSPIx->SR & (1 << SPI_SR_TXE_BIT_POS))); // Busy wait to send the data byte.
 		while (SPI_GetFlagStatus(pSPIx, SPI_SR_TXE_BIT_MASK) == FLAG_RESET);
+		for (int j = 0; j < 100; j++) {
+			;// TODO: This delay is needed in order to allow the code to work - not clear why !
+		}
 
-		// 2. Write new data byte(s) according to the frame format, and decrement the number of bytes to send accordingly.
+		// 2. Write new data byte(s) (from RX Buffer to DR) according to the frame format, and decrement the number of bytes to send accordingly.
 		if (pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 			// 16 bit Data Frame Format
 			if (numBytesToSend > 1) {
@@ -194,6 +198,7 @@ void SPI_DataTx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
 			}
 		} else {
 			// 8 bit Data Frame Format
+			//printf("sending on SPI: %c\n", (uint8_t)*pTxBuff);
 			pSPIx->DR = *pTxBuff;
 			numBytesToSend--;
 			pTxBuff++;
@@ -215,7 +220,30 @@ void SPI_DataTx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
  *
  **************************************************************/
 void SPI_DataRx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pRxBuff, uint32_t numBytesToReceive) {
+	while (numBytesToReceive > 0) {
+		// 1. Wait until a byte will arrive (RXNE is not empty)
+		// TODO: update the code to use interrupt instead of using busy wait.
+		while (SPI_GetFlagStatus(pSPIx, SPI_SR_RXNE_BIT_MASK) == FLAG_RESET);
 
+		// 2. Read data byte(s) (from DR to RX Buffer) according to the frame format, and decrement the number of bytes to receive accordingly.
+		if (pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
+			// 16 bit Data Frame Format
+			if (numBytesToReceive > 1) {
+				*((uint16_t*)pRxBuff) = pSPIx->DR;
+				numBytesToReceive -= 2;
+				(uint16_t*)pRxBuff++;
+			} else {
+				// Note: when using 16 bits frame format, the value in numBytesToReceive must be even, else the code will get stuck.
+				// to prevent this - if this happens - get out of the function at the last byte, since sending odd number of bytes will not make the last byte complete and will not cause the interrupt to occure.
+				numBytesToReceive--;
+			}
+		} else {
+			// 8 bit Data Frame Format
+			*pRxBuff = pSPIx->DR;
+			numBytesToReceive--;
+			pRxBuff++;
+		}
+	}
 }
 
 

@@ -57,3 +57,4 @@ RemoteSystemsTempFiles/
 Debug/
 MasteringMCU/
 Embedded - Shortcut.lnk
+workspace1/stm32f446xx_drivers/stm32f446xx_drivers Debug.launch

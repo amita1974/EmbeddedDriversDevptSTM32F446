@@ -5,16 +5,27 @@
  *      Author: Amit Alon
  */
 
+/*
+ * This program sends data from the STM32 MCU using the SPI TX function to another MCU on an Arduino Uno board.
+ * The Arduino is configured to be in Slave mode and the STM will be in Master mode.
+ * The wires connections are:
+ * STM32 GND		<==> Arduino GND
+ * STM32 SPI MOSI	<==> Arduino SPI MOSI (11)
+ * STM32 SPI SCLK	<==> Arduino SPI SCLK (13)
+ * STM32 SPI NSS	<==> Arduino SPI SS   (10)
+ * STM32 SPI MISO NC, 	 Arduino SPI MISO NC (12)
+ * Logic Analyzer can be connected on the above 3 connection lines
+ */
+
 #include <string.h>
 #include "stm32f446xx.h"
 #include "utils.h"
 
-#define NUCLEO64_STM32F446RE
 
-#ifdef NUCLEO64_STM32F446RE // development board
-#define SPIx 			SPI1
-#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board
-#define SPIx SPI2
+#ifdef NUCLEO64_STM32F446RE_SPI1_PORTS // development board
+#define SPIx	SPI1
+#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board or NUCLEO64_STM32F446RE_SPI2_PORTS
+#define SPIx	SPI2
 #endif // Board based configuration
 
 
@@ -26,7 +37,7 @@ void SPIx_GPIOInits(void) {
 	SPIPins.GPIO_PinConfig.GPIO_OPType = GPIO_OP_TYPE__PP;
 	SPIPins.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__PU;
 
-#ifdef NUCLEO64_STM32F446RE // development board
+#ifdef NUCLEO64_STM32F446RE_SPI1_PORTS // development board
 	/*
 	 * Values for Nucleo-64 (STM32F446RE based) board: (source: D:Nucleo 64 development board\STM32 Nucleo-64 boards User Manual.pdf, Table 19. Arduino connectors on NUCLEO-F446RE)
 	 * SPI1_MOSI: PA7, CN5 Pin:4 PinName:D11
@@ -53,7 +64,7 @@ void SPIx_GPIOInits(void) {
 	SPIPins.pGPIOx = GPIOB;
 	SPIPins.GPIO_PinConfig.GPIO_PinNum = GPIO_PIN_NUM__6;
 	GPIO_Init(&SPIPins);
-#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board
+#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board or NUCLEO64_STM32F446RE_SPI2_PORTS
 	/*
 	 * Values for STM32F4DISCOVERY (STM32F407G-DISC1) board:
 	 * Using AF5 the following pins are configured for SPI2 (taken from Table 11. Alternate function in the STM32 DS)
@@ -86,9 +97,9 @@ void SPIx_GPIOInits(void) {
 
 void SPIx_Inits(void) {
 	SPI_Handle_t SPIHandle;
-#ifdef NUCLEO64_STM32F446RE // development board
+#ifdef NUCLEO64_STM32F446RE_SPI1_PORTS // development board
 	SPIHandle.pSPIx = SPI1;
-#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board
+#else // STM32F4DISCOVERY (STM32F407G-DISC1) development board or NUCLEO64_STM32F446RE_SPI2_PORTS
 	SPIHandle.pSPIx = SPI2;
 #endif // Board based configuration
 	SPIHandle.SPIConfig.SPI_BusConfig = SPI_BUS_CONFIG__FULL_DUPLEX;
@@ -109,6 +120,19 @@ int main (void) {
 	 */
 
 	char user_data[] = "Hello world"; // in this program the user data should not exceed 255 bytes.
+//	char user_data[] = "A"; // in this program the user data should not exceed 255 bytes.
+//	char user_data[] = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+
+	// set up the user button port
+	GPIO_Handle_t GpioUserButton;
+	GpioUserButton.pGPIOx = BUTTON_GPIO_PORT;
+	GpioUserButton.GPIO_PinConfig.GPIO_PinNum = BUTTON_GPIO_PIN_NUM;//
+	GpioUserButton.GPIO_PinConfig.GPIO_PinMode = GPIO_PINMODE__IN;
+	GpioUserButton.GPIO_PinConfig.GPIO_OutputSpeed = GPIO_OP_SPEED__FAST;
+	GpioUserButton.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__NONE;
+	GPIOC_PCLK_EN();
+	GPIO_Init(&GpioUserButton);
+
 	// set up the desired GPIOs to operate as interface pins of SPI_2 peripheral
 	SPIx_GPIOInits();
 	// Init the relevant SPI peripheral
@@ -117,7 +141,10 @@ int main (void) {
 	SPI_SSOEConfig(SPIx, ENABLE);
 
 	while (1) {
-		// Once configured, enable the SPIx Peripheral
+		while (GPIO_ReadFromInputPin(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN_NUM) != BUTTON_PRESSED);
+		delay(1);// to distinguish between different button presses - allow time to the user to release the button and not see this as another press.
+
+		// Enable the SPIx Peripheral
 		SPI_PerControl(SPIx, ENABLE);
 
 		// Send the data
@@ -126,15 +153,11 @@ int main (void) {
 			// trim the transmitted data in case that it is larger than 255 bytes to the first 255 bytes
 			data_len = 255;
 		}
-		SPI_DataTx(SPIx, &data_len, 1);
-		SPI_DataTx(SPIx, (uint8_t*)user_data, data_len);
+		SPI_DataTx(SPIx, &data_len, 1); // send length byte
+		SPI_DataTx(SPIx, (uint8_t*)user_data, data_len); // send the data
 
 		// Disable the SPIx Peripheral
 		SPI_PerControl(SPIx, DISABLE);
-		// TODO: The Arduino does not show indication that the SS pin goes high at this stage.
-		// Maybe the NSS(CS) pin is not the one that is exposed on the board, since this pin PA5 does not have SPI_CS
-		// in its alternate mode in the RM of the STM32, while the nucleo board documentation says that it is the SPI1_CS...
-		delay(5); // button replacement.
 	}
 
 	return 0;
