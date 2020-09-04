@@ -221,7 +221,7 @@ void SPI_DataTx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
  **************************************************************/
 void SPI_DataRx(SPIAndI2s_RegDef_t *pSPIx, uint8_t* pRxBuff, uint32_t numBytesToReceive) {
 	while (numBytesToReceive > 0) {
-		// 1. Wait until a byte will arrive (RXNE is not empty)
+		// 1. Wait until a byte will arrive (RXNE bit will be set to mark that RX buffer is Not Empty - new byte has arrived.)
 		// TODO: update the code to use interrupt instead of using busy wait.
 		while (SPI_GetFlagStatus(pSPIx, SPI_SR_RXNE_BIT_MASK) == FLAG_RESET);
 

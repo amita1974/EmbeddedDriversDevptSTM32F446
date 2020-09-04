@@ -69,8 +69,8 @@
 #define CMD_PRINT			0x53
 #define CMD_ID_READ			0x54
 
-#define LED_OFF		0
-#define LED_ON		1
+#define LED_OFF			0
+#define LED_ON			1
 
 #define ANALOG_PIN_0	0
 #define ANALOG_PIN_1	1
@@ -143,8 +143,9 @@ void SPIx_Inits(void) {
 	SPIHandle.pSPIx = SPIx;
 	SPIHandle.SPIConfig.SPI_BusConfig = SPI_BUS_CONFIG__FULL_DUPLEX;
 	SPIHandle.SPIConfig.SPI_DeviceMode = SPI_DVICE_MODE__MASTER;
-	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV8; // 2MHz clock
-	//SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV2; // 8MHz clock, Max possible
+	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV8; // 2MHz clock. Arduino was able to interpret the opcode value when SPI speed was 4MHz but at 8MHz it couldn't.
+															 // TODO: check if changing its clock divider will allow faster SPI clock speed.
+	//SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV2; // 8MHz clock, Max possible on STM32, too fast to communicate with ARduino Uno without changing its current SW.
 	SPIHandle.SPIConfig.SPI_CPOL = SPI_CPOL__CK_IDLE_LOW;
 	SPIHandle.SPIConfig.SPI_CPHA = SPI_CPHA__1ST_CLK_SAMPLE;
 	SPIHandle.SPIConfig.SPI_DFF = SPI_DFF__8_BITS;
@@ -180,30 +181,35 @@ int main (void) {
 		SPI_PerControl(SPIx, ENABLE);
 
 		// CMD_LED_CTRL	: <Pin num (1 byte, value 0..9)> <Value(1 byte, 1=On, 0=Off)>. Slave returns: none. (for testing connect LED on pin 9 with 470 Ohm resistor).
+		printf("Sending CMD LED Control... ");
+		// 1. Send the opcode
 		uint8_t commandOpcode = CMD_LED_CTRL;
 		SPI_DataTx(SPIx, &commandOpcode, 1);
 		// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
 		SPI_DataRx(SPIx, &dummyRead, 1);
 
-		//TODO: DEBUG: Need to understand why the following delay is needed. Without it the communication does not work and the exchanged data is being corrupted.
-		// Also when changing the clock speed to 8MHz instead of 2MHz, this delay is not enough (maybe delay is needed in other places in the code - not checked yet.
+		// Delay is needed in order to allow the Arduino Slave to read the opcode and reply with ACK/NACK.
+		// Without the delay the Arduino slave will not have enough time to send the reply and we will read...
+		// ..the opcode back before the Arduino could write its response.
 		delay(1);
 
-		// Send a dummy byte in order to generate clock and shift the result back
+		// 2. Read the ACK/NACK from the slave:
+		// 2.1 Send a dummy byte in order to generate clock and shift the result back
 		SPI_DataTx(SPIx, &dummyWrite, 1);
+		// 2.2 Now the ACK/NACK should be in the master's DR. Read it (after RXNE bit will be set).
 		SPI_DataRx(SPIx, &ackByte, 1);
 		if (ackByte == ACK_BYTE__VAL_ACK) {
-			printf("Sending CMD LED Control on Pin %d, set to %s\n", LED_PIN, led_value == 0 ? "Off" : "On");
+			led_value = (led_value + 1) & 1; // toggle the last led value between the values 0 and 1.
+			printf("Slave responded with a ACK (0x%x). Sending CMD LED Control parameters: Pin %d, set to %s\n", ACK_BYTE__VAL_ACK, LED_PIN, led_value == 0 ? "Off" : "On");
 		} else if (ackByte == ACK_BYTE__VAL_NACK) {
-			printf("Error: Slave responded with a NACK to LED Control command\n");
+			printf("Error: Slave responded with a NACK (0x%x) to LED Control command\n", ACK_BYTE__VAL_NACK);
 			SPI_PerControl(SPIx, DISABLE);
 			continue;
 		} else {
-			printf("Error: Unexpected ACK value received from the slave on LED control command: %d\n", ackByte);
+			printf("Error: Unexpected ACK value received from the slave on LED control command: 0x%x\n", ackByte);
 			SPI_PerControl(SPIx, DISABLE);
 			continue;
 		}
-		led_value = (led_value + 1) & 1; // toggle the last led value between the values 0 and 1.
 		args[0] = LED_PIN;
 		args[1] = led_value;
 		SPI_DataTx(SPIx, args, 2);
