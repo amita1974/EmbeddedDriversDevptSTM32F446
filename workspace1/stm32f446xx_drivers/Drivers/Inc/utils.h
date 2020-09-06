@@ -12,7 +12,7 @@
 //#include "stm32f446xx_gpio_driver.h"
 
 /*
- * Board related defines
+ * Development Board Related Defines
  */
 #define NUCLEO64_STM32F446RE
 //#define STM32F407G_DISC1
@@ -35,5 +35,6 @@
 // Busy wait delay function
 // TODO: should be calibrated to hold the relevant loop value to fit specific time base
 void delay(uint8_t delay_loop);
+void delayBusyCustom(uint32_t uint32_loop_delay_param);
 
 #endif /* INC_UTILS_H_ */

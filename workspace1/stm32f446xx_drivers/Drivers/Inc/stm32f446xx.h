@@ -335,7 +335,8 @@ typedef struct {
 
 
 /*
- * NVIC IRQ mapping for all peripherals and IRQ sources, interrupt priorities
+ * NVIC IRQ mapping for all peripherals and IRQ sources, interrupt priorities, interrupt handler function pointer address.
+ * Source: STM34446XX RM, Table 38. Vector table for STM32F446xx
  */
 // Non-IRQ-vector-Table_entries - Priority - Reserved 0x0000 0000
 // Non-IRQ-vector-Table_entries - Priority (-3 fixed Priority) Reset Reset 0x0000 0004

@@ -23,7 +23,8 @@
  *  4. Hardware Slave Management (SSM = 0)
  *  SCLK Speed = 2MHz, fclk = 16MHz.
  *  Connectivity:
- *  STM MASTER MOSI PB15 (pin 26)<==> Slave MOSI Arduino Pin 11		Yello
+ *  STM Nucleo board					Arduino Board				Wire color used in the setup
+ *  STM MASTER MOSI PB15 (pin 26)<==> Slave MOSI Arduino Pin 11		Yellow
  *  STM MASTER MISO PB14 (pin 28)<==> Slave MISO Arduino Pin 12		Green
  *  STM MASTER SCLK PB13 (pin 30)<==> Slave SCLK Arduino Pin 13		Red
  *  STM MASTER NSS  PB12 (pin 16) <==> Slave CS  Arduino Pin 10		Orange
@@ -54,7 +55,7 @@
  *
  */
 
-#include <stdio.h> // for printf
+#include <stdio.h>  // for printf
 #include "stm32f446xx.h"
 #include "utils.h"
 
@@ -69,6 +70,9 @@
 #define CMD_PRINT			0x53
 #define CMD_ID_READ			0x54
 
+#define	CMD_SUCCESS		0
+#define	CMD_FAIL		1
+
 #define LED_OFF			0
 #define LED_ON			1
 
@@ -79,18 +83,17 @@
 #define ANALOG_PIN_4	4
 #define ANALOG_PIN_5	5
 
-#define LED_PIN			9 // The Arduino pin there the LED is connected
+#define LED_PIN			9 // The Arduino pin where the LED is connected
 
 #define ACK_BYTE__VAL_ACK	0xF5
 #define ACK_BYTE__VAL_NACK	0xA5
+#define ACK_BYTE__VAL_OTHER	0xFF // represent any value other than ACK or NACK.
 
-uint8_t dummyWrite = 0xAA; // just a dummy byte to send in order to shift back the data from the slave to the master.
-uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
-uint8_t ackByte;
-uint8_t responseByte;
-uint8_t led_value = 0;
-uint8_t args[2];
-uint8_t commandOpcode;
+#define MAX_SLAVE_ID_STRLEN 50
+
+char printStringVal[] = "Hello Slave, this is a text message from Master !\n";
+uint16_t stringLen = sizeof(printStringVal);
+
 
 void Button_GPIOInit(void) {
 	GPIO_Handle_t GpioUserButton;
@@ -110,9 +113,8 @@ void SPI2_GPIOInits(void) {
 	SPIPins.GPIO_PinConfig.GPIO_OPType = GPIO_OP_TYPE__PP;
 	SPIPins.GPIO_PinConfig.GPIO_PuPdControl = GPIO_PU_PD__PU;
 
-// STM32F4DISCOVERY (STM32F407G-DISC1) development board or NUCLEO64_STM32F446RE_SPI2_PORTS
 	/*
-	 * Values for STM32F4DISCOVERY (STM32F407G-DISC1) board:
+	 * STM32F4DISCOVERY (STM32F407G-DISC1) development board and NUCLEO64_STM32F446RE_SPI2_PORTS
 	 * Using AF5 the following pins are configured for SPI2 (taken from Table 11. Alternate function in the STM32 DS)
 	 * SPI2_MOSI: PB15
 	 * SPI2_MISO: PB14
@@ -144,9 +146,9 @@ void SPIx_Inits(void) {
 	SPIHandle.pSPIx = SPIx;
 	SPIHandle.SPIConfig.SPI_BusConfig = SPI_BUS_CONFIG__FULL_DUPLEX;
 	SPIHandle.SPIConfig.SPI_DeviceMode = SPI_DVICE_MODE__MASTER;
-	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV8; // 2MHz clock. Arduino was able to interpret the opcode value when SPI speed was 4MHz but at 8MHz it couldn't.
-															 // TODO: check if changing its clock divider will allow faster SPI clock speed.
-	//SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV2; // 8MHz clock, Max possible on STM32, too fast to communicate with ARduino Uno without changing its current SW.
+	//SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV8; // 2MHz clock. works well with Arduno Uno as SPI Slave
+	SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV4;   // 4MHz clock. works well with Arduino Uno as SPI Slave
+	//SPIHandle.SPIConfig.SPI_SclkSpeed = SPI_BUS_SPEED__DIV2; // 8MHz clock, Max possible on STM32, too fast to communicate with Arduino Uno without changing its current SW. It is possible to check if changing the Arduino's clock divider will allow faster SPI clock speed.
 	SPIHandle.SPIConfig.SPI_CPOL = SPI_CPOL__CK_IDLE_LOW;
 	SPIHandle.SPIConfig.SPI_CPHA = SPI_CPHA__1ST_CLK_SAMPLE;
 	SPIHandle.SPIConfig.SPI_DFF = SPI_DFF__8_BITS;
@@ -154,12 +156,240 @@ void SPIx_Inits(void) {
 	SPI_Init(&SPIHandle);
 }
 
+void busyWaitForUserButton(void)
+{
+	while (GPIO_ReadFromInputPin(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN_NUM) != BUTTON_PRESSED);
+	// User button was pressed. Perform a short delay in order to distinguish between different button...
+	// ..presses - allow time to the user to release the button and not see this as another press.
+	delay(1);
+}
+
+uint8_t receiveAndCheckAckFromSlave(void){
+	uint8_t dummyWrite = 0xAA; // just a dummy byte to send in order to shift back the data from the slave to the master.
+	uint8_t ackByte;
+	// Delay is needed in order to allow the Arduino Slave to read the opcode and reply with ACK/NACK.
+	// Without the delay the Arduino slave will not have enough time to send the reply and we will read...
+	// ..the opcode back before the Arduino could write its response.
+	delay(1);
+
+	// Read the ACK/NACK from the slave:
+	// 1 Send a dummy byte in order to generate clock and shift the result back
+	SPI_DataTx(SPIx, &dummyWrite, 1);
+	// 2 Now the ACK/NACK should be in the master's DR. Read it (after RXNE bit will be set).
+	SPI_DataRx(SPIx, &ackByte, 1);
+	if (ackByte == ACK_BYTE__VAL_ACK) {
+		printf("Slave responded with a ACK (0x%x)\n", ACK_BYTE__VAL_ACK);
+		return ACK_BYTE__VAL_ACK;
+	} else if (ackByte == ACK_BYTE__VAL_NACK) {
+		printf("Error: Slave responded with a NACK (0x%x)\n", ACK_BYTE__VAL_NACK);
+		SPI_PerControl(SPIx, DISABLE);
+		return ACK_BYTE__VAL_NACK;
+	} else {
+		printf("Error: Unexpected ACK/NACK value received from the slave: 0x%x\n", ackByte);
+		SPI_PerControl(SPIx, DISABLE);
+		return ACK_BYTE__VAL_OTHER;
+	}
+}
+
+// CMD_LED_CTRL	: <Pin num (1 byte, value 0..9)> <Value(1 byte, 1=On, 0=Off)>. Slave returns: none. (for testing connect LED on pin 9 with 470 Ohm resistor).
+int i2cSendCmdLedCtrl(void)
+{
+	uint8_t args[2];
+	uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
+	static uint8_t led_value = 0;
+	uint8_t commandOpcode;
+
+	// Enable the SPIx Peripheral
+	SPI_PerControl(SPIx, ENABLE);
+
+	printf("Sending CMD LED Control...\n");
+	// Send the opcode
+	commandOpcode = CMD_LED_CTRL;
+	SPI_DataTx(SPIx, &commandOpcode, 1);
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	if (receiveAndCheckAckFromSlave() != ACK_BYTE__VAL_ACK) {
+		SPI_PerControl(SPIx, DISABLE);
+		return CMD_FAIL;
+	}
+
+	led_value = (led_value + 1) & 1; // toggle the last led value between the values 0 and 1.
+	printf("LED Control parameters: Pin %d, set to %s\n", LED_PIN, led_value == 0 ? "Off" : "On");
+	args[0] = LED_PIN;
+	args[1] = led_value;
+	SPI_DataTx(SPIx, args, 2);
+	SPI_PerControl(SPIx, DISABLE);
+	return CMD_SUCCESS;
+}
+
+// CMD_SENSOR_READ	: <Analog Pin Num (1 byte, Port A0..A5)>. Slave returns: 1 byte Analog value.
+uint8_t i2cSendCmdSensorRead(void)
+{
+	uint8_t dummyWrite = 0xAA; // just a dummy byte to send in order to shift back the data from the slave to the master.
+	uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
+	uint8_t args[2];
+	uint8_t responseByte;
+	uint8_t commandOpcode;
+
+	// Enable the SPIx Peripheral
+	SPI_PerControl(SPIx, ENABLE);
+
+	printf("Sending Sensor read command...\n");
+	// Send the opcode
+	commandOpcode = CMD_SENSOR_READ;
+	SPI_DataTx(SPIx, &commandOpcode, 1);
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	if (receiveAndCheckAckFromSlave() != ACK_BYTE__VAL_ACK) {
+		SPI_PerControl(SPIx, DISABLE);
+		return CMD_FAIL;
+	}
+	printf("Sending Sensor read parameters on Analog pin %d\n", ANALOG_PIN_0);
+	args[0] = ANALOG_PIN_0;
+	SPI_DataTx(SPIx, args, 1);
+
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	// Delay is needed in order to allow the Arduino Slave to read the operand and reply with the sensor value.
+	// Without the delay the Arduino slave will not have enough time to measure and send the reply.
+	delay(1);
+
+	// Read the Sensor value from the slave:
+	// 1. Send a dummy byte in order to generate clock and shift the result back
+	SPI_DataTx(SPIx, &dummyWrite, 1);
+	// 2. Now the the Sensor value should be in the master's DR. Read it (after RXNE bit will be set).
+	SPI_DataRx(SPIx, &responseByte, 1);
+	printf("The sensor value is %d (0x%x)\n", responseByte, responseByte);
+	return CMD_SUCCESS;
+}
+
+// CMD_LED_READ: <Pin num (1 byte, value 0..9)>. Slave returns: 1 byte Digital Value 0/1.
+uint8_t i2cSendCmdLedRead(uint8_t pinNum) {
+	uint8_t dummyWrite = 0xAA; // just a dummy byte to send in order to shift back the data from the slave to the master.
+	uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
+	uint8_t args[2];
+	uint8_t responseByte;
+	uint8_t commandOpcode;
+
+	// Enable the SPIx Peripheral
+	SPI_PerControl(SPIx, ENABLE);
+
+	printf("Sending LED status read command...\n");
+	// Send the opcode
+	commandOpcode = CMD_LED_READ;
+	SPI_DataTx(SPIx, &commandOpcode, 1);
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	if (receiveAndCheckAckFromSlave() != ACK_BYTE__VAL_ACK) {
+		SPI_PerControl(SPIx, DISABLE);
+		return CMD_FAIL;
+	}
+	printf("LED status read parameters: Pin %d\n", pinNum);
+	args[0] = pinNum;
+	SPI_DataTx(SPIx, args, 1);
+
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	// Delay is needed in order to allow the Arduino Slave to read the operand and reply with the sensor value.
+	// Without the delay the Arduino slave will not have enough time to measure and send the reply.
+	delay(1);
+
+	// Read the Sensor value from the slave:
+	// 1. Send a dummy byte in order to generate clock and shift the result back
+	SPI_DataTx(SPIx, &dummyWrite, 1);
+	// 2. Now the the Led status value should be in the master's DR. Read it (after RXNE bit will be set).
+	SPI_DataRx(SPIx, &responseByte, 1);
+	printf("The Led status in pin %d is %d\n", pinNum, responseByte);
+	return CMD_SUCCESS;
+}
+
+// CMD_PRINT: <LEN(2)> <message(len)>. Slave returns: none.
+uint8_t i2cSendCmdPrint(uint16_t stringLen, char* pprintStringVal)
+{
+	uint8_t args[2];
+	uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
+	uint8_t commandOpcode;
+
+	// Enable the SPIx Peripheral
+	SPI_PerControl(SPIx, ENABLE);
+
+	printf("Sending print command...\n");
+	// Send the opcode
+	commandOpcode = CMD_PRINT;
+	SPI_DataTx(SPIx, &commandOpcode, 1);
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	if (receiveAndCheckAckFromSlave() != ACK_BYTE__VAL_ACK) {
+		SPI_PerControl(SPIx, DISABLE);
+		return CMD_FAIL;
+	}
+	printf("The print string and length parameters: Len: %d, string: %s\n", stringLen, pprintStringVal);
+	args[0] = (uint16_t)stringLen;
+	SPI_DataTx(SPIx, args, 1);
+	SPI_DataTx(SPIx, (uint8_t*)printStringVal, (uint32_t)stringLen);
+	return CMD_SUCCESS;
+}
+
+// CMD_ID_READ. Slave returns: 10 bytes of board string ID.
+uint8_t i2cSendCmdIdRead()
+{
+	uint8_t dummyWrite = 0xAA; // just a dummy byte to send in order to shift back the data from the slave to the master.
+	uint8_t dummyRead; // used to clear the RXNE after writing (and as a result getting a byte in return.
+	char slaveIdSrting[MAX_SLAVE_ID_STRLEN];
+	uint8_t slaveIdLen;
+	uint8_t commandOpcode;
+
+	// Enable the SPIx Peripheral
+	SPI_PerControl(SPIx, ENABLE);
+
+	printf("Sending Slave ID Read command...\n");
+	// Send the opcode
+	commandOpcode = CMD_ID_READ;
+	SPI_DataTx(SPIx, &commandOpcode, 1);
+	// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
+	SPI_DataRx(SPIx, &dummyRead, 1);
+
+	if (receiveAndCheckAckFromSlave() != ACK_BYTE__VAL_ACK) {
+		SPI_PerControl(SPIx, DISABLE);
+		return CMD_FAIL;
+	}
+
+	// Delay is needed in order to allow the Arduino Slave to measure and reply with the sensor value.
+	delay(1);
+
+	// Read the Slave ID from the slave:
+	// 1 Send a dummy byte in order to generate clock and shift the result back
+	SPI_DataTx(SPIx, &dummyWrite, 1);
+	// 2 Now the the Led status value should be in the master's DR. Read it (after RXNE bit will be set).
+	SPI_DataRx(SPIx, &slaveIdLen, 1);
+	// Limit the ID string to maximum allocated board ID length to prevent memory leak as a result of length parameter received from the Arduino Slave.
+	// TODO: need to update the code to read all the extra bytes from the SPI interface according to the length in order to allow the following commands to work.
+	if (slaveIdLen >= MAX_SLAVE_ID_STRLEN) {
+		slaveIdLen = MAX_SLAVE_ID_STRLEN - 1;
+	}
+	printf("Slave ID's length: %d\n", slaveIdLen);
+	for (int i = 0; i < slaveIdLen; i++) {
+		SPI_DataTx(SPIx, &dummyWrite, 1);
+		SPI_DataRx(SPIx, (uint8_t*)&slaveIdSrting[i], 1);
+	}
+	slaveIdSrting[slaveIdLen] = 0; // null termination at the end of the received string.
+	printf("%s\n", (char*)&slaveIdSrting);
+	return CMD_SUCCESS;
+}
+
+
 
 int main (void) {
 	/*
 	 * test the following scenarios:
-	 * SPI-2 Master mode\SCLK speed = max possible
-	 * DFF = 0 and also test with DFF = 1
+	 * SPI-2 Master mode. SCLK speed = max possible
+	 * DFF = 0 (TODO: test also with DFF = 1)
 	 */
 	// Set up the user button port
 	Button_GPIOInit();
@@ -173,119 +403,21 @@ int main (void) {
 	SPI_SSOEConfig(SPIx, ENABLE);
 
 	while (1) {
-		while (GPIO_ReadFromInputPin(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN_NUM) != BUTTON_PRESSED);
-		/* User button was pressed. Perform a short delay in order to distinguish between different button
-		 * presses - allow time to the user to release the button and not see this as another press. */
-		delay(1);
-
-		// Enable the SPIx Peripheral
-		SPI_PerControl(SPIx, ENABLE);
-
-		// CMD_LED_CTRL	: <Pin num (1 byte, value 0..9)> <Value(1 byte, 1=On, 0=Off)>. Slave returns: none. (for testing connect LED on pin 9 with 470 Ohm resistor).
-		printf("Sending CMD LED Control... ");
-		// 1. Send the opcode
-		commandOpcode = CMD_LED_CTRL;
-		SPI_DataTx(SPIx, &commandOpcode, 1);
-		// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
-		SPI_DataRx(SPIx, &dummyRead, 1);
-
-		// Delay is needed in order to allow the Arduino Slave to read the opcode and reply with ACK/NACK.
-		// Without the delay the Arduino slave will not have enough time to send the reply and we will read...
-		// ..the opcode back before the Arduino could write its response.
-		delay(1);
-
-		// 2. Read the ACK/NACK from the slave:
-		// 2.1 Send a dummy byte in order to generate clock and shift the result back
-		SPI_DataTx(SPIx, &dummyWrite, 1);
-		// 2.2 Now the ACK/NACK should be in the master's DR. Read it (after RXNE bit will be set).
-		SPI_DataRx(SPIx, &ackByte, 1);
-		if (ackByte == ACK_BYTE__VAL_ACK) {
-			led_value = (led_value + 1) & 1; // toggle the last led value between the values 0 and 1.
-			printf("Slave responded with a ACK (0x%x). Sending CMD LED Control parameters: Pin %d, set to %s\n", ACK_BYTE__VAL_ACK, LED_PIN, led_value == 0 ? "Off" : "On");
-		} else if (ackByte == ACK_BYTE__VAL_NACK) {
-			printf("Error: Slave responded with a NACK (0x%x) to LED Control command\n", ACK_BYTE__VAL_NACK);
-			SPI_PerControl(SPIx, DISABLE);
-			continue;
-		} else {
-			printf("Error: Unexpected ACK value received from the slave on LED control command: 0x%x\n", ackByte);
-			SPI_PerControl(SPIx, DISABLE);
-			continue;
-		}
-		args[0] = LED_PIN;
-		args[1] = led_value;
-		SPI_DataTx(SPIx, args, 2);
-		SPI_PerControl(SPIx, DISABLE);
-
-
-		// CMD_SENSOR_READ	: <Analog Pin Num (1 byte, Port A0..A5)>. Slave returns: 1 byte Analog value.
-		while (GPIO_ReadFromInputPin(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN_NUM) != BUTTON_PRESSED);
-		/* User button was pressed. Perform a short delay in order to distinguish between different button
-		 * presses - allow time to the user to release the button and not see this as another press. */
-		delay(1);
-
-		// Enable the SPIx Peripheral
-		SPI_PerControl(SPIx, ENABLE);
-
-		// CMD_LED_CTRL	: <Pin num (1 byte, value 0..9)> <Value(1 byte, 1=On, 0=Off)>. Slave returns: none. (for testing connect LED on pin 9 with 470 Ohm resistor).
-		printf("Sending Sensor read command... ");
-		// 1. Send the opcode
-		commandOpcode = CMD_SENSOR_READ;
-		SPI_DataTx(SPIx, &commandOpcode, 1);
-		// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
-		SPI_DataRx(SPIx, &dummyRead, 1);
-
-		// Delay is needed in order to allow the Arduino Slave to read the opcode and reply with ACK/NACK.
-		// Without the delay the Arduino slave will not have enough time to send the reply and we will read...
-		// ..the opcode back before the Arduino could write its response.
-		delay(1);
-
-		// 2. Read the ACK/NACK from the slave:
-		// 2.1 Send a dummy byte in order to generate clock and shift the result back
-		SPI_DataTx(SPIx, &dummyWrite, 1);
-		// 2.2 Now the ACK/NACK should be in the master's DR. Read it (after RXNE bit will be set).
-		SPI_DataRx(SPIx, &ackByte, 1);
-		if (ackByte == ACK_BYTE__VAL_ACK) {
-			printf("Slave responded with a ACK (0x%x). Sending Sensor read parameters: Pin %d\n", ACK_BYTE__VAL_ACK, ANALOG_PIN_0);
-		} else if (ackByte == ACK_BYTE__VAL_NACK) {
-			printf("Error: Slave responded with a NACK (0x%x) to Sensor read command\n", ACK_BYTE__VAL_NACK);
-			SPI_PerControl(SPIx, DISABLE);
-			continue;
-		} else {
-			printf("Error: Unexpected ACK value received from the slave on Sensor read command: 0x%x\n", ackByte);
-			SPI_PerControl(SPIx, DISABLE);
-			continue;
-		}
-		args[0] = ANALOG_PIN_0;
-		SPI_DataTx(SPIx, args, 1);
-
-		// Dummy read to clear RXNE bit in SR that will be set as a result of the TX.
-		SPI_DataRx(SPIx, &dummyRead, 1);
-
-		// Delay is needed in order to allow the Arduino Slave to read the operand and reply with the sensor value.
-		// Without the delay the Arduino slave will not have enough time to measure and send the reply.
-		delay(1);
-
-		// 2. Read the Sensor value from the slave:
-		// 2.1 Send a dummy byte in order to generate clock and shift the result back
-		SPI_DataTx(SPIx, &dummyWrite, 1);
-		// 2.2 Now the the Sensor value should be in the master's DR. Read it (after RXNE bit will be set).
-		SPI_DataRx(SPIx, &responseByte, 1);
-		printf("The sensor value is 0x%x\n", responseByte);
-
-		//TODO: Continue implementation of the following commands.
-		// CMD_LED_READ: <Pin num (1 byte, value 0..9)>. Slave returns: 1 byte Digital Value 0/1.
-
-		// CMD_PRINT: <LEN(2)> <message(len)>. Slave returns: none.
-		// CMD_ID_READ. Slave returns: 10 bytes of board string ID.
-
-//		// Send the data
-//		uint8_t data_len = strlen(user_data);
-//		if (data_len > 255) {
-//			// trim the transmitted data in case that it is larger than 255 bytes to the first 255 bytes
-//			data_len = 255;
-//		}
-//		SPI_DataTx(SPIx, &data_len, 1); // send length byte
-//		SPI_DataTx(SPIx, (uint8_t*)user_data, data_len); // send the data
+		do {
+			busyWaitForUserButton();
+		} while (i2cSendCmdLedCtrl() != CMD_SUCCESS);
+		do {
+			busyWaitForUserButton();
+		} while (i2cSendCmdLedRead(LED_PIN) != CMD_SUCCESS);
+		do {
+			busyWaitForUserButton();
+		} while (i2cSendCmdSensorRead() != CMD_SUCCESS);
+		do {
+			busyWaitForUserButton();
+		} while (i2cSendCmdPrint(stringLen, &printStringVal[0]) != CMD_SUCCESS);
+		do {
+			busyWaitForUserButton();
+		} while (i2cSendCmdIdRead() != CMD_SUCCESS);
 
 		// Disable the SPIx Peripheral
 		SPI_PerControl(SPIx, DISABLE);
