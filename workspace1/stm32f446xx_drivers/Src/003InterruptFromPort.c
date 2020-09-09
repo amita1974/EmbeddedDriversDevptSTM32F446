@@ -15,7 +15,8 @@ void EXTI15_10_IRQHandler (void)
 	GPIO_IRQHandle(13);
 }
 
-int main (void) {
+int main (void)
+{
 //	*((volatile uint32_t*) (NVIC_IPR_BASE + 0x28)) |= 5;
 
 	GPIO_Handle_t GpioLED;

@@ -14,7 +14,7 @@
  *
  * Note:
  * This program version is for basic tests only - the implemented communication protocol is not intended to be robust.
- * Only Basic communication protocol with a very basic errors detection/recovery is implemented.
+ * Only Basic communication protocol with a very basic (or no) errors detection/recovery is implemented.
  *
  *  In this example:
  *  1. there is a demonstration of use of the SPI interface in Full-duplex mode.
@@ -162,6 +162,7 @@ void busyWaitForUserButton(void)
 	// User button was pressed. Perform a short delay in order to distinguish between different button...
 	// ..presses - allow time to the user to release the button and not see this as another press.
 	delay(1);
+	printf("\n"); // just to make a space line from previous command prints
 }
 
 uint8_t receiveAndCheckAckFromSlave(void){

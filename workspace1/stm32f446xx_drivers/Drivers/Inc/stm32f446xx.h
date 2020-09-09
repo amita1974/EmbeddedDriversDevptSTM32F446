@@ -10,6 +10,7 @@
 
 #include "utils.h"
 #include <stdint.h>
+#include <stddef.h> // for NULL definition
 
 /* ********************************** Processor Specific Details ******************************** */
 /* ARM Cortex 4 NVIC ISER (Interrupt Set-enable Registers) Registers Addresses */
