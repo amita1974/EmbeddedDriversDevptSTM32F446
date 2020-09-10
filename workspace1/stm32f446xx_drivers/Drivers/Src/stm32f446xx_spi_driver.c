@@ -29,7 +29,7 @@ static void SPI_InterruptHandleFre(SPI_Handle_t* pSPIHandle);
 //   Specifically add code to enable and disable the OVR interrupts and the SPI_CR2_ERRIE_BIT_POS
 // * add timeouts to the SPI RX function in order to prevent from getting stuck for a byte that will never arrive.
 // * add support to work in other modes, like slave, master to many slaves (need several NSS pins), etc.
-
+// * The OVR Error SPI Interrupt driver should be updated to include API to enable / disable this interrupt source.
 
 /*
  * Peripheral clock setup
@@ -287,16 +287,22 @@ void SPI_DataRx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pRxBuff, uint32_t numBytesTo
  * @param[in]	- Pointer to a buffer of the data to transmit
  * @param[in]	- The number of bytes to transmit
  *
- * @return		- none
+ * @return		- SPI_TXRX_STATE__ACTIVE if the peripheral was already busy in other data transmission (the function call was ignored)
+ * 				  or
+ *                SPI_TXRX_STATE__INACTIVE if the peripheral was available to transmit the data.
+
+ * @return		- The TX state that was during the call to the function.
+ *                If returned SPI_TXRX_STATE__ACTIVE this means that the execution did not start since the
+ *                device was already in TX state of other data transmission.
  *
- * @Note		- This is a blocking function
+ * @Note		- This is a Non-blocking function
  *
  **************************************************************/
 SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32_t numBytesToSend) {
 	SPI_TxRxState_t txState = pSPIHandle->TxState;
 	if (txState == SPI_TXRX_STATE__INACTIVE) {
 		//1. Save the Tx buffer address and Len information in the relevant global variables
-		pSPIHandle->pTxBuffer = pTxBuff;
+		pSPIHandle->pTxBuff = pTxBuff;
 		pSPIHandle->TxLen = numBytesToSend;
 
 		//2. Mark the SPI State as busy in transmission so that no other code will start using...
@@ -306,6 +312,8 @@ SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32
 		//3. Enable the TXEIE control bit to get interrupt when TX of a byte of this SPI peripheral is ended.
 		pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_TXEIE_BIT_POS);
 		//4. Data transmission will be handled in the ISR code.
+	} else {
+		printf("Trying to transmit data while the SPI peripheral is in the middle of other TX operation\n");
 	}
 	return txState;
 }
@@ -320,8 +328,9 @@ SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32
  * @param[in]	- Pointer to a buffer of the data to receive
  * @param[in]	- The number of bytes to receive
  *
- * @return		- SPI_TXRX_STATE__ACTIVE if the peripheral was already busy in transmission and in use (action not taken care of) or
- *                SPI_TXRX_STATE__INACTIVE if the peripheral was available to transmit the data.
+ * @return		- SPI_TXRX_STATE__ACTIVE if the peripheral was already busy in other data reception (the function call was ignored)
+ * 				  or
+ *                SPI_TXRX_STATE__INACTIVE if the peripheral was available to receive the data.
  *
  * @Note		- none
  *
@@ -330,7 +339,7 @@ SPI_TxRxState_t SPI_DataRxInt(SPI_Handle_t* pSPIHandle, uint8_t* pRxBuff, uint32
 	SPI_TxRxState_t rxState = pSPIHandle->RxState;
 	if (rxState == SPI_TXRX_STATE__INACTIVE) {
 		//1. Save the Rx buffer address and Len information in the relevant global variables
-		pSPIHandle->pRxBuffer = pRxBuff;
+		pSPIHandle->pRxBuff = pRxBuff;
 		pSPIHandle->RxLen = numBytesToReceive;
 
 		//2. Mark the SPI State as busy in reception so that no other code will start using...
@@ -340,6 +349,8 @@ SPI_TxRxState_t SPI_DataRxInt(SPI_Handle_t* pSPIHandle, uint8_t* pRxBuff, uint32
 		//3. Enable the RXNEIE control bit to get interrupt when RX of a byte of this SPI peripheral is ended.
 		pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_RXNEIE_BIT_POS);
 		//4. Data reception will be handled in the ISR code.
+	} else {
+		printf("Trying to receive data while the SPI peripheral is in the middle of other RX operation\n");
 	}
 	return rxState;
 }
@@ -451,7 +462,7 @@ void SPI_PerControl(SPIAndI2s_RegDef_t* pSPIx, uint8_t EnOrDis) {
 void SPI_IRQInterrupEnDisCfg(uint8_t IRQNum, uint8_t EnOrDis) {
 	uint8_t reg_offset_from_base = (IRQNum / 32) * 4;
 	uint8_t bit_offset = IRQNum % 32;
-	if (EnOrDis) {
+	if (EnOrDis == ENABLE) {
 		*((volatile uint32_t*) (NVIC_ISER_BASE + reg_offset_from_base)) = (1 << bit_offset);
 	} else {
 		*((volatile uint32_t*) (NVIC_ICER_BASE + reg_offset_from_base)) = (1 << bit_offset);
@@ -572,7 +583,7 @@ void SPI_ClearOVRFlag(SPIAndI2s_RegDef_t* pSPIx) {
 void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle) {
 	// Disable new TXE interrupts
 	pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE_BIT_POS);
-	pSPIHandle->pTxBuffer = NULL;
+	pSPIHandle->pTxBuff = NULL;
 	pSPIHandle->TxState = SPI_TXRX_STATE__INACTIVE;
 	pSPIHandle->TxLen = 0; // used in case of call to this function from the Application layer, before the data was completed to be transmitted.
 }
@@ -601,14 +612,14 @@ void SPI_CloseReception(SPI_Handle_t* pSPIHandle)
 {
 	// prevent more interrupts from RXNE source.
 	pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_RXNEIE_BIT_POS);
-	//pSPIHandle->pRxBuffer = NULL; // TODO: Verify that this not needed
+	//pSPIHandle->pRxBuff = NULL; // TODO: Verify that this not needed
 	pSPIHandle->RxState = SPI_TXRX_STATE__INACTIVE;
 	pSPIHandle->RxLen = 0; // used in case of call to this function from the Application layer, before the data was completed to be received.
 }
 
 
 /**************************************************************
- * @fn			- SPI_TxeInterruptHandle
+ * @fn			- SPI_InterruptHandleTxe
  *
  * @brief		- This function is called from the ISR function to handle SPI TXE event (Marks end of TXed byte)
  *
@@ -624,22 +635,22 @@ static void SPI_InterruptHandleTxe(SPI_Handle_t* pSPIHandle) {
 	if (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 		// 16 bit Data Frame Format
 		if (pSPIHandle->TxLen > 1) {
-			pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer);
+			pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuff);
 			pSPIHandle->TxLen -= 2;
-			(uint16_t*)pSPIHandle->pTxBuffer++;
+			(uint16_t*)pSPIHandle->pTxBuff++;
 		} else {
 			// Last byte - write only 1 data byte into the 16 bit register leaving the value of the other 8 bits...
 			// ..as zero, in order to prevent writing garbage data in the last byte.
-			pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer;
+			pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuff;
 			pSPIHandle->TxLen--;
-			pSPIHandle->pTxBuffer++;
+			pSPIHandle->pTxBuff++;
 		}
 	} else {
 		// 8 bit Data Frame Format
 		//printf("sending on SPI: %c\n", (uint8_t)*pTxBuff);
-		pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer;
+		pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuff;
 		pSPIHandle->TxLen--;
-		pSPIHandle->pTxBuffer++;
+		pSPIHandle->pTxBuff++;
 	}
 	// 2. If no more bytes left to transmit than mark the peripheral as not transmitting anymore.
 	if (pSPIHandle->TxLen == 0) {
@@ -652,7 +663,7 @@ static void SPI_InterruptHandleTxe(SPI_Handle_t* pSPIHandle) {
 
 
 /**************************************************************
- * @fn			- SPI_RxneInterruptHandle
+ * @fn			- SPI_InterruptHandleRxne
  *
  * @brief		- This function is called from the ISR function to handle SPI RXNE event (marks RXed byte)
  *
@@ -668,20 +679,20 @@ static void SPI_InterruptHandleRxne(SPI_Handle_t* pSPIHandle) {
 	if (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 		// 16 bit Data Frame Format
 		if (pSPIHandle->RxLen > 1) {
-			*((uint16_t*)pSPIHandle->pRxBuffer) = pSPIHandle->pSPIx->DR;
+			*((uint16_t*)pSPIHandle->pRxBuff) = pSPIHandle->pSPIx->DR;
 			pSPIHandle->RxLen -= 2;
-			(uint16_t*)pSPIHandle->pRxBuffer++;
+			(uint16_t*)pSPIHandle->pRxBuff++;
 		} else {
 			// Last byte - read only 1 data byte into the 16 bit register leaving the value of the other 8 bits...
 			// ..as zero, in order to prevent writing garbage data in the last byte.
-			*pSPIHandle->pRxBuffer = pSPIHandle->pSPIx->DR;
+			*pSPIHandle->pRxBuff = pSPIHandle->pSPIx->DR;
 			pSPIHandle->RxLen--;
-			pSPIHandle->pRxBuffer++;
+			pSPIHandle->pRxBuff++;
 		}
 	} else {
-		*pSPIHandle->pTxBuffer = pSPIHandle->pSPIx->DR;
+		*pSPIHandle->pRxBuff = pSPIHandle->pSPIx->DR;
 		pSPIHandle->RxLen--;
-		pSPIHandle->pRxBuffer++;
+		pSPIHandle->pRxBuff++;
 	}
 	// 2. If no more bytes left to receive than mark the peripheral as not receiving anymore.
 	if (pSPIHandle->RxLen == 0) {
@@ -694,7 +705,7 @@ static void SPI_InterruptHandleRxne(SPI_Handle_t* pSPIHandle) {
 
 
 /**************************************************************
- * @fn			- SPI_RxneInterruptHandle
+ * @fn			- SPI_InterruptHandleOvr
  *
  * @brief		- This function is called from the ISR function to handle SPI Overrun Error.
  * 				  It marks RXed Byte(s) before the DR was read - lost of data byte or more.
@@ -734,7 +745,7 @@ static void SPI_InterruptHandleOvr(SPI_Handle_t* pSPIHandle) {
 
 
 /**************************************************************
- * @fn			- SPI_ModfInterruptHandle
+ * @fn			- SPI_InterruptHandleModf
  *
  * @brief		- This function is called from the ISR function to handle Master Mode Fault Error.
  * 				  The function  is called from the ISR Only if this interrupt source is enabled.
@@ -770,7 +781,7 @@ static void SPI_InterruptHandleCrcErr(SPI_Handle_t* pSPIHandle) {
 
 
 /**************************************************************
- * @fn			- SPI_FreInterruptHandle
+ * @fn			- SPI_InterruptHandleFre
  *
  * @brief		- This function is called from the ISR function to handle TI Frame Format Error.
  * 				  The function  is called from the ISR Only if this interrupt source is enabled.
@@ -841,7 +852,7 @@ void SPI_IRQHandle(SPI_Handle_t* pSPIHandle) {
 
 
 /**************************************************************
- * @fn			- SPI_IRQHandle
+ * @fn			- SPI_ApplicationEventCallback
  *
  * @brief		- This function should be implemented in the application layer.
  *                The interrupt layer will report SPI related events using this function to the application.

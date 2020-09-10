@@ -453,12 +453,12 @@ typedef struct {
 /*
  * Some Generic Macros
  */
-#define ENABLE			1
 #define DISABLE			0
-#define SET				ENABLE
+#define ENABLE			1
 #define RESET			DISABLE
-#define GPIO_PIN_SET	SET
+#define SET				ENABLE
 #define GPIO_PIN_RESET	RESET
+#define GPIO_PIN_SET	SET
 #define FLAG_RESET		RESET
 #define FLAG_SET		SET
 

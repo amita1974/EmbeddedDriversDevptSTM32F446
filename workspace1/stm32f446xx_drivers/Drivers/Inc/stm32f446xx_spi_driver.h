@@ -83,8 +83,8 @@ typedef struct {
 typedef struct {
 	SPIAndI2s_RegDef_t*	pSPIx; 	/* !< The base address of SPIx peripheral (x = 1/2/3/4) */
 	SPI_Config_t 		SPIConfig;	/* !< SPI configuration struct passed from the application to the driver */
-	uint8_t *			pTxBuffer;	/* !< Pointer to the TX Buffer used by the App for this SPI Peripheral */
-	uint8_t *			pRxBuffer;	/* !< Pointer to the RX Buffer used by the App for this SPI Peripheral */
+	uint8_t*			pTxBuff;	/* !< Pointer to the TX Buffer used by the App for this SPI Peripheral */
+	uint8_t*			pRxBuff;	/* !< Pointer to the RX Buffer used by the App for this SPI Peripheral */
 	uint32_t			TxLen;		/* !< */
 	uint32_t			RxLen;		/* !< */
 	SPI_TxRxState_t		TxState;	/* !< marks if the device is in the middle of TX or if it is free to start a new transmission */

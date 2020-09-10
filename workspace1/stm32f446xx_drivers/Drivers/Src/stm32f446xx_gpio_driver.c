@@ -7,7 +7,7 @@
 
 #include "stm32f446xx_gpio_driver.h"
 
-//TODO: Add to the driver's functions values checking and logic to check if some configuration values does not make sence,
+//TODO: Add to the driver's functions values checking and logic to check if some configuration values does not make sense,
 //      e.g. setting PU/PD on input port, set output type on input port, etc...
 
 /*
