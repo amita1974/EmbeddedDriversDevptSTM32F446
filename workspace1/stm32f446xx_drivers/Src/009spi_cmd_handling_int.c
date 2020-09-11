@@ -11,7 +11,7 @@
  * SPI tx and rx interrupt based functions basic testing.
  * based on 008spi_cmd_handling.c
  * TODO: enable the errors interrupt and check the OVR error reporting and recovery.
- *
+ * The program runs with Arduino sketch 002SPISlaveCmdHandling.ino
  * This program shows communication between master and slave using the driver, and shows use of both SPI Tx and SPI Rx functions.
  * SPI master (STM32) and SPI Slave (Arduino) Command and response based communication.
  * When the user button is pressed master is sending a command to the slave. The slave may respond as needed - per the command implementation.

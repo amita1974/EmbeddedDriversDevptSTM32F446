@@ -10,6 +10,7 @@
 /*
  * This program shows communication between master and slave using the driver, and shows use of both SPI Tx and SPI Rx functions.
  * SPI master (STM32) and SPI Slave (Arduino) Command and response based communication.
+ * The program runs with Arduino sketch 002SPISlaveCmdHandling.ino
  * When the user button is pressed master is sending a command to the slave. The slave may respond as needed - per the command implementation.
  *
  * Note:

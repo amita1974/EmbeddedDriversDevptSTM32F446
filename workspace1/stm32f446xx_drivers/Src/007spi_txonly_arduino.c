@@ -15,6 +15,7 @@
  * STM32 SPI NSS	<==> Arduino SPI SS   (10)
  * STM32 SPI MISO NC, 	 Arduino SPI MISO NC (12)
  * Logic Analyzer can be connected on the above 3 connection lines
+ * The program runs with Arduino sketch 001SPISlaveRxString.ino
  */
 
 #include <string.h>
@@ -146,6 +147,9 @@ int main (void) {
 
 		// Enable the SPIx Peripheral
 		SPI_PerControl(SPIx, ENABLE);
+		 // A short delay is needed in order to assure that the Arduino Slave will be able to read the...
+		 //.. Length field - in case when the Arduino Slave will print indication about SS line going low.
+		//delayBusyCustom(200);
 
 		// Send the data
 		uint8_t data_len = strlen(user_data);

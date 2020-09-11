@@ -205,9 +205,6 @@ void SPI_DataTx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
 		// TODO: update the code to use interrupt instead of using busy wait.
 		//while (!(pSPIx->SR & (1 << SPI_SR_TXE_BIT_POS))); // Busy wait to send the data byte.
 		while (SPI_GetFlagStatus(pSPIx, SPI_SR_TXE_BIT_MASK) == FLAG_RESET);
-		for (int j = 0; j < 100; j++) {
-			;// TODO: DEBUG: This delay is needed in order to allow the code to work - not clear why !
-		}
 
 		// 2. Write new data byte(s) (from RX Buffer to DR) according to the frame format, and decrement the number of bytes to send accordingly.
 		if (pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
