@@ -863,31 +863,46 @@ void SPI_IRQHandle(SPI_Handle_t* pSPIHandle) {
  * @Note		- This function should be implemented in the application layer
  *
  **************************************************************/
-__attribute((weak)) void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp)
+__attribute__((weak)) void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp)
 {
 	/*
 	 * This is a weak function - in order to allow the user application to implement this function
 	 * and override the content of this empty function.
 	 * A skeleton of the main application is suggested in comments below.
 	 */
-//	switch (SPI_EventApp) {
-//		case SPI_EVENT_APP_CALLBACK__TX_CMPLT: {
-//		// The requested buffer transmission was just completed.
-//		}
-//		case SPI_EVENT_APP_CALLBACK__RX_CMPLT: {
-//		// The requested number of bytes reception was just completed. the data is pending in the rxBuffer
-//		}
-//		case SPI_EVENT_APP_CALLBACK__OVR_ERROR: {
-//		// OVR Error occurred in the RX channel
-//		}
-//		case SPI_EVENT_APP_CALLBACK__CRC_ERROR: {
-//		// CRC Error identified in the SPI communication
-//		}
-//		case SPI_EVENT_APP_CALLBACK__MODF_ERROR: {
-//		}
-//		case SPI_EVENT_APP_CALLBACK__FRE_ERROR: {
-//		}
-//		default: {
-//		}
-//	}
+	printf("SPI_EventApp: %d ==> ", SPI_EventApp);
+	switch (SPI_EventApp) {
+		case SPI_EVENT_APP_CALLBACK__TX_CMPLT: {
+			// The requested buffer transmission was just completed.
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__TX_CMPLT (%d)\n", SPI_EventApp);
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__RX_CMPLT: {
+			// The requested number of bytes reception was just completed. the data is pending in the rxBuffer
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__RX_CMPLT (%d)\n", SPI_EventApp);
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__OVR_ERROR: {
+			// OVR Error occurred in the RX channel
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__OVR_ERROR (%d)\n", SPI_EventApp);
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__CRC_ERROR: {
+			// CRC Error identified in the SPI communication
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__CRC_ERROR (%d)\n", SPI_EventApp);
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__MODF_ERROR: {
+			// MODF Error identified in the SPI communication
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__MODF_ERROR (%d)\n", SPI_EventApp);
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__FRE_ERROR: {
+			// FRE Error identified in the SPI communication
+			printf("weak implementation from the driver: SPI_EVENT_APP_CALLBACK__FRE_ERROR (%d)\n", SPI_EventApp);
+			break;
+		}
+		default: {
+		}
+	}
 }

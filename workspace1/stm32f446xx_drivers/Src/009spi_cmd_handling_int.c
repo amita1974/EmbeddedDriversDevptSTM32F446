@@ -478,12 +478,58 @@ void SPI2_IRQHandler(void) {
 }
 
 
+// TODO: DEBUG - why is this function running in the driver and not in the application layer? the driver is weak attributed !
+void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp)
+{
+	printf("in App implementaion of SPI_ApplicationEventCallback()\n");
+	/*
+	 * This is the user application implementation that overwrites the weak function that is implemented in the driver
+	 */
+	switch (SPI_EventApp) {
+		case SPI_EVENT_APP_CALLBACK__TX_CMPLT: {
+			// The requested buffer transmission was just completed.
+			printf("Application Layer - SPI Event received: TX complete\n");
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__RX_CMPLT: {
+			// The requested number of bytes reception was just completed. the data is pending in the rxBuffer
+			printf("Application Layer - SPI Event received: RX complete\n");
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__OVR_ERROR: {
+			// OVR Error occurred in the RX channel
+			printf("Application Layer - SPI Event received: OVR Error occurred in the RX channel\n");
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__CRC_ERROR: {
+			// CRC Error identified in the SPI communication
+			printf("Application Layer - SPI Event received: CRC Error occurred in the RX channel\n");
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__MODF_ERROR: {
+			// MODF Error identified in the SPI communication
+			printf("Application Layer - SPI Event received: MODF Error occurred\n");
+			break;
+		}
+		case SPI_EVENT_APP_CALLBACK__FRE_ERROR: {
+			// FRE Error identified in the SPI communication
+			printf("Application Layer - SPI Event received: FRE Error (TI mode frame format error) occurred\n");
+			break;
+		}
+		default: {
+			printf("Application Layer - ERROR ! Unexpected Event received\n");
+		}
+	}
+}
+
+
 int main (void) {
 	/*
 	 * test the following scenarios:
 	 * SPI-2 Master mode. SCLK speed = 2MHz
 	 * DFF = 0 (TODO: test also with DFF = 1)
 	 */
+
 
 	// Set up the user button port
 	Button_GPIOInit();

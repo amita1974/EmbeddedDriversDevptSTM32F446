@@ -157,7 +157,6 @@ void SPI_CloseReception(SPI_Handle_t* pSPIHandle);
 /*
  * Application Callback function
  */
-__attribute((weak) )void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp);
-
+__attribute__((weak)) void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp);
 
 #endif /* INC_STM32F446XX_SPI_DRIVER_H_ */
