@@ -481,7 +481,7 @@ void SPI2_IRQHandler(void) {
 // TODO: DEBUG - why is this function running in the driver and not in the application layer? the driver is weak attributed !
 void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, SPI_EventAppCallback_t SPI_EventApp)
 {
-	printf("in App implementaion of SPI_ApplicationEventCallback()\n");
+	printf("in App implementation of SPI_ApplicationEventCallback()\n");
 	/*
 	 * This is the user application implementation that overwrites the weak function that is implemented in the driver
 	 */

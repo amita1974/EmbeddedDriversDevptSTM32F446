@@ -88,7 +88,8 @@ void SPI_PerClockControl (SPIAndI2s_RegDef_t* pSPIx, uint8_t EnOrDis)
  * @Note		- none
  *
  **************************************************************/
-void SPI_Init(SPI_Handle_t* pSPIHanlde) {
+void SPI_Init(SPI_Handle_t* pSPIHanlde)
+{
 	// Peripheral Clock enable
 	SPI_PerClockControl(pSPIHanlde->pSPIx, ENABLE);
 
@@ -145,7 +146,8 @@ void SPI_Init(SPI_Handle_t* pSPIHanlde) {
  * @Note		- none
  *
  **************************************************************/
-void SPI_DeInit(SPIAndI2s_RegDef_t* pSPIx) { // this will reset ALL the registers of specific SPI port.
+void SPI_DeInit(SPIAndI2s_RegDef_t* pSPIx)
+{
 	if (pSPIx == SPI1) {
 		SPI1_REGS_RESET();
 	} else if (pSPIx == SPI2) {
@@ -172,7 +174,8 @@ void SPI_DeInit(SPIAndI2s_RegDef_t* pSPIx) { // this will reset ALL the register
  * @Note		- none
  *
  **************************************************************/
-uint8_t SPI_GetFlagStatus (SPIAndI2s_RegDef_t* pSPIx, uint32_t FlagBitMask) {
+uint8_t SPI_GetFlagStatus (SPIAndI2s_RegDef_t* pSPIx, uint32_t FlagBitMask)
+{
 	if (pSPIx->SR & FlagBitMask) {
 		return FLAG_SET;
 	}
@@ -199,7 +202,8 @@ uint8_t SPI_GetFlagStatus (SPIAndI2s_RegDef_t* pSPIx, uint32_t FlagBitMask) {
  * @Note		- This is a blocking function
  *
  **************************************************************/
-void SPI_DataTx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pTxBuff, uint32_t numBytesToSend) {
+void SPI_DataTx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pTxBuff, uint32_t numBytesToSend)
+{
 	while (numBytesToSend > 0) {
 		// 1. Wait until TXE is empty
 		// TODO: update the code to use interrupt instead of using busy wait.
@@ -245,7 +249,8 @@ void SPI_DataTx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pTxBuff, uint32_t numBytesTo
  * @Note		- none
  *
  **************************************************************/
-void SPI_DataRx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pRxBuff, uint32_t numBytesToReceive) {
+void SPI_DataRx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pRxBuff, uint32_t numBytesToReceive)
+{
 	// TODO: Add code that return back to main within timeout of not receiving the expected numBytesToReceive on the SPI interface.
 	while (numBytesToReceive > 0) {
 		// 1. Wait until a byte will arrive (RXNE bit will be set to mark that RX buffer is Not Empty - new byte has arrived.)
@@ -295,7 +300,8 @@ void SPI_DataRx(SPIAndI2s_RegDef_t* pSPIx, uint8_t* pRxBuff, uint32_t numBytesTo
  * @Note		- This is a Non-blocking function
  *
  **************************************************************/
-SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32_t numBytesToSend) {
+SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32_t numBytesToSend)
+{
 	SPI_TxRxState_t txState = pSPIHandle->TxState;
 	if (txState == SPI_TXRX_STATE__INACTIVE) {
 		//1. Save the Tx buffer address and Len information in the relevant global variables
@@ -332,7 +338,8 @@ SPI_TxRxState_t SPI_DataTxInt(SPI_Handle_t* pSPIHandle, uint8_t* pTxBuff, uint32
  * @Note		- none
  *
  **************************************************************/
-SPI_TxRxState_t SPI_DataRxInt(SPI_Handle_t* pSPIHandle, uint8_t* pRxBuff, uint32_t numBytesToReceive) {
+SPI_TxRxState_t SPI_DataRxInt(SPI_Handle_t* pSPIHandle, uint8_t* pRxBuff, uint32_t numBytesToReceive)
+{
 	SPI_TxRxState_t rxState = pSPIHandle->RxState;
 	if (rxState == SPI_TXRX_STATE__INACTIVE) {
 		//1. Save the Rx buffer address and Len information in the relevant global variables
@@ -367,7 +374,8 @@ SPI_TxRxState_t SPI_DataRxInt(SPI_Handle_t* pSPIHandle, uint8_t* pRxBuff, uint32
  * @Note		- When using SSM = 1 and acting as Master the pin must be set to high in order to avoid SPI MODF Error
  *
  **************************************************************/
-void SPI_SSIConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t NSSPinSetOrReset) {
+void SPI_SSIConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t NSSPinSetOrReset)
+{
 	if (NSSPinSetOrReset == GPIO_PIN_SET) {
 		pSPIx->CR1 |= (1 << SPI_CR1_SSI_BIT_POS);
 	} else {
@@ -392,7 +400,8 @@ void SPI_SSIConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t NSSPinSetOrReset) {
  * @Note		-
  *
  **************************************************************/
-void SPI_SSOEConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t SSOESetOrReset) {
+void SPI_SSOEConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t SSOESetOrReset)
+{
 	if (SSOESetOrReset == SET) {
 		pSPIx->CR2 |= (1 << SPI_CR2_SSOE_BIT_POS);
 	} else {
@@ -414,7 +423,8 @@ void SPI_SSOEConfig(SPIAndI2s_RegDef_t* pSPIx, uint8_t SSOESetOrReset) {
  * @Note		- The SPI Peripheral configuration should be done BEFORE calling to this function !
  *
  **************************************************************/
-void SPI_PerControl(SPIAndI2s_RegDef_t* pSPIx, uint8_t EnOrDis) {
+void SPI_PerControl(SPIAndI2s_RegDef_t* pSPIx, uint8_t EnOrDis)
+{
 	if (EnOrDis == ENABLE) {
 		pSPIx->CR1 |= (1 << SPI_CR1_SPE_BIT_POS);
 	} else {
@@ -456,7 +466,8 @@ void SPI_PerControl(SPIAndI2s_RegDef_t* pSPIx, uint8_t EnOrDis) {
 // TODO: Actually this function is the same for all interrupts - not only for this peripheral.
 //       Consider moving it to a more centralized place and call this code from here as well as from the GPIO_IRQInterrupEnDisCfg() function
 //       in order to avoid code duplication.
-void SPI_IRQInterrupEnDisCfg(uint8_t IRQNum, uint8_t EnOrDis) {
+void SPI_IRQInterrupEnDisCfg(uint8_t IRQNum, uint8_t EnOrDis)
+{
 	uint8_t reg_offset_from_base = (IRQNum / 32) * 4;
 	uint8_t bit_offset = IRQNum % 32;
 	if (EnOrDis == ENABLE) {
@@ -481,7 +492,8 @@ void SPI_IRQInterrupEnDisCfg(uint8_t IRQNum, uint8_t EnOrDis) {
  * @Note		- none
  *
  **************************************************************/
-void SPI_IRQInterrupPriCfg(uint8_t IRQNum, uint8_t IRQPrio) {
+void SPI_IRQInterrupPriCfg(uint8_t IRQNum, uint8_t IRQPrio)
+{
 	uint8_t reg_offset_from_base = (IRQNum / 4) * 4;
 	uint8_t bit_offset = ((IRQNum % 4) * 8) + NUM_PRIO_BITS_UNUSED_STM32MCU;
 	*((volatile uint32_t*) (NVIC_IPR_BASE + reg_offset_from_base)) |= (IRQPrio << (bit_offset));
@@ -502,7 +514,8 @@ void SPI_IRQInterrupPriCfg(uint8_t IRQNum, uint8_t IRQPrio) {
  * @Note		- none
  *
  **************************************************************/
-SPI_TxRxState_t SPI_GetRxState(SPI_Handle_t* pSPIHandle) {
+SPI_TxRxState_t SPI_GetRxState(SPI_Handle_t* pSPIHandle)
+{
 	return pSPIHandle->RxState;
 }
 
@@ -521,7 +534,8 @@ SPI_TxRxState_t SPI_GetRxState(SPI_Handle_t* pSPIHandle) {
  * @Note		- none
  *
  **************************************************************/
-SPI_TxRxState_t SPI_GetTxState(SPI_Handle_t* pSPIHandle) {
+SPI_TxRxState_t SPI_GetTxState(SPI_Handle_t* pSPIHandle)
+{
 	return pSPIHandle->TxState;
 }
 
@@ -552,7 +566,8 @@ SPI_TxRxState_t SPI_GetTxState(SPI_Handle_t* pSPIHandle) {
  *                One options is to add function get RXNE flag status to allow the application to read the DR only if RXNE is already set...
  *
  **************************************************************/
-void SPI_ClearOVRFlag(SPIAndI2s_RegDef_t* pSPIx) {
+void SPI_ClearOVRFlag(SPIAndI2s_RegDef_t* pSPIx)
+{
 	// Clearing the OVR bit is done by a read access to the SPI_DR register followed by a read access to the SPI_SR register.
 	uint16_t dummyRead;
 	dummyRead = pSPIx->DR;
@@ -577,7 +592,8 @@ void SPI_ClearOVRFlag(SPIAndI2s_RegDef_t* pSPIx) {
  * @Note		- none.
  *
  **************************************************************/
-void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle) {
+void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle)
+{
 	// Disable new TXE interrupts
 	pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE_BIT_POS);
 	pSPIHandle->pTxBuff = NULL;
@@ -627,7 +643,8 @@ void SPI_CloseReception(SPI_Handle_t* pSPIHandle)
  * @Note		- none
  *
  **************************************************************/
-static void SPI_InterruptHandleTxe(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleTxe(SPI_Handle_t* pSPIHandle)
+{
 	// 1. Write new data byte(s) (from RX Buffer to DR) according to the frame format, and decrement the number of bytes to send accordingly.
 	if (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 		// 16 bit Data Frame Format
@@ -671,7 +688,8 @@ static void SPI_InterruptHandleTxe(SPI_Handle_t* pSPIHandle) {
  * @Note		- none
  *
  **************************************************************/
-static void SPI_InterruptHandleRxne(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleRxne(SPI_Handle_t* pSPIHandle)
+{
 	// 1. Read new data byte(s) (from the DR to RX Buffer) according to the frame format, and decrement the number of bytes to read accordingly.
 	if (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF_BIT_POS)) {
 		// 16 bit Data Frame Format
@@ -715,7 +733,8 @@ static void SPI_InterruptHandleRxne(SPI_Handle_t* pSPIHandle) {
  * @Note		- none
  *
  **************************************************************/
-static void SPI_InterruptHandleOvr(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleOvr(SPI_Handle_t* pSPIHandle)
+{
  /*
   * Overrun Error flag (OVR)
   * An overrun condition occurs when the master or the slave completes the reception of the
@@ -754,7 +773,8 @@ static void SPI_InterruptHandleOvr(SPI_Handle_t* pSPIHandle) {
  * @Note		- Currently NOT implemented. Do not enable this interrupt source until the function will be implemented.
  *
  **************************************************************/
-static void SPI_InterruptHandleModf(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleModf(SPI_Handle_t* pSPIHandle)
+{
 	// TODO: Add support to this interrupt source if it will be needed and update the above comment at the note field
 }
 
@@ -772,7 +792,8 @@ static void SPI_InterruptHandleModf(SPI_Handle_t* pSPIHandle) {
  * @Note		- Currently NOT implemented. Do not enable this interrupt source until the function will be implemented.
  *
  **************************************************************/
-static void SPI_InterruptHandleCrcErr(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleCrcErr(SPI_Handle_t* pSPIHandle)
+{
 	// TODO: Add support to this interrupt source if it will be needed and update the above comment at the note field
 }
 
@@ -790,7 +811,8 @@ static void SPI_InterruptHandleCrcErr(SPI_Handle_t* pSPIHandle) {
  * @Note		- Currently NOT implemented. Do not enable this interrupt source until the function will be implemented.
  *
  **************************************************************/
-static void SPI_InterruptHandleFre(SPI_Handle_t* pSPIHandle) {
+static void SPI_InterruptHandleFre(SPI_Handle_t* pSPIHandle)
+{
 	// TODO: Add support to this interrupt source if it will be needed and update the above comment at the note field
 }
 
@@ -808,8 +830,8 @@ static void SPI_InterruptHandleFre(SPI_Handle_t* pSPIHandle) {
  * @Note		- none
  *
  **************************************************************/
-void SPI_IRQHandle(SPI_Handle_t* pSPIHandle) {
-	
+void SPI_IRQHandle(SPI_Handle_t* pSPIHandle)
+{
 	/* Check the source of the SPI interrupt */
 	/* SPI TX/RX related interrupts */
 	if ((pSPIHandle->pSPIx->SR  & (SPI_SR_TXE_BIT_MASK)) &&
@@ -906,3 +928,4 @@ __attribute__((weak)) void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle
 		}
 	}
 }
+
