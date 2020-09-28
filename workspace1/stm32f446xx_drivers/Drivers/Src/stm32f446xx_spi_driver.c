@@ -30,6 +30,10 @@ static void SPI_InterruptHandleFre(SPI_Handle_t* pSPIHandle);
 // * add timeouts to the SPI RX function in order to prevent from getting stuck for a byte that will never arrive.
 // * add support to work in other modes, like slave, master to many slaves (need several NSS pins), etc.
 // * The OVR Error SPI Interrupt driver should be updated to include API to enable / disable this interrupt source.
+// * Consider adding the option to mask all interrupt while the configuration is done and restore the interrupts global
+//   mask state once done with the configuration (See PRIMASK register on the ARM Cortex MCU UG - "Core registers" chapter.
+// * Consider adding a macro/function to allow enable/disable all interrupts in order to allow configuration of several
+//   GPIOs and only once done enable the general IRQ
 
 /*
  * Peripheral clock setup
