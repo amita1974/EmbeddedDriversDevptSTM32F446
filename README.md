@@ -24,8 +24,10 @@ Tested on STM32 Nucleo-64 development boart of ST Microelectronics - https://www
 
 Online resources used for the development of the drivers:
 
-Development Board:
+Development Board - Nucleo-446re
+=================================
 https://www.st.com/en/evaluation-tools/nucleo-f446re.html#resource
+
 Nucleo-446re Data Brief https://www.st.com/resource/en/data_brief/nucleo-f446re.pdf
 
 STM32F446RE resources
