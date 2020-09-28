@@ -24,19 +24,23 @@ Tested on STM32 Nucleo-64 development boart of ST Microelectronics - https://www
 
 Online resources used for the development of the drivers:
 
-Development Board: https://www.st.com/en/evaluation-tools/nucleo-f446re.html#resource
+Development Board:
+https://www.st.com/en/evaluation-tools/nucleo-f446re.html#resource
+Nucleo-446re Data Brief https://www.st.com/resource/en/data_brief/nucleo-f446re.pdf
 
-Data Brief https://www.st.com/resource/en/data_brief/nucleo-f446re.pdf
+STM32F446RE resources
+======================
 
-STM32F446RE resources - https://www.st.com/en/microcontrollers-microprocessors/stm32f446.html#resource
+https://www.st.com/en/microcontrollers-microprocessors/stm32f446.html#resource
 
-Reference Manual - https://www.st.com/resource/en/reference_manual/dm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+STM32F446RE Reference Manual - https://www.st.com/resource/en/reference_manual/dm00135183-stm32f446xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
 
-Data Sheet - https://www.st.com/resource/en/datasheet/stm32f446re.pdf
+STM32F446RE Data Sheet - https://www.st.com/resource/en/datasheet/stm32f446re.pdf
 
-Programmer Manual - https://www.st.com/resource/en/programming_manual/dm00046982-stm32-cortexm4-mcus-and-mpus-programming-manual-stmicroelectronics.pdf
+STM32F446RE Programmer Manual - https://www.st.com/resource/en/programming_manual/dm00046982-stm32-cortexm4-mcus-and-mpus-programming-manual-stmicroelectronics.pdf
 
 ARM Cortex M4 devices Generic User Guide
+=========================================
 https://developer.arm.com/documentation/dui0553/b/
 
 https://documentation-service.arm.com/static/5f2ac76d60a93e65927bbdc5?token=
