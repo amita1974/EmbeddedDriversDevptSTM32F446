@@ -44,7 +44,7 @@
  */
 int main(void)
 {
-	printf("Hello world!!! this is a beautiful day!\n");
+    printf("Hello world!!! this is a beautiful day!\n");
     /* Loop forever */
 	for(;;);
 }

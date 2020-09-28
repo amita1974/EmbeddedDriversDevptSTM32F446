@@ -14,3 +14,8 @@ void delay(uint8_t delay_loop) {
 	}
 }
 
+void delayBusyCustom(uint32_t uint32_loop_delay_param) {
+	for (uint32_t i = 0; i < uint32_loop_delay_param; i++) {
+		;
+	}
+}

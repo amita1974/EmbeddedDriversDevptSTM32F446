@@ -10,6 +10,7 @@ Some of the drivers that are planned to be developed as excercise:
 	Support for various ports configurations e.g. speed, otput type, pull-up/pull down, etc.
 	Interrupts support - (Also with interrupts support initiated from GPIO ports, including the EXTI (External Interrupts) peripheral and the Cortex's NVIC (Nested Interrupts Vector COntroller)).
 2. SPI
+And if time till allow, also
 3. I2C
 4. UART / USART
  	
