@@ -31,7 +31,7 @@
  * Add the code from here:
  * https://github.com/niekiran/Embedded-C/blob/master/All_source_codes/target/itm_send_data.c
  *
- * to syscalls.c (located in the src directory), immediately after the includes, and modifu __write frunction to call
+ * to syscalls.c (located in the src directory), immediately after the includes, and modify __write function to call
  * ITM_SendChar()
  * instead of
  * __io_putchar()
