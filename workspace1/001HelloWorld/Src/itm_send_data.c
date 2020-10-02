@@ -5,6 +5,7 @@
 //					If you are using Cortex M0, then you can use semihosting feature of openOCD
 //   To enable printf using the ITM SWV mechanism, add this function to syscalls.c and call ITM_SendChar instead of io_putch
 //   in _write function as can be seen in syscalls.c in this directory.
+//   The source of this file is from https://github.com/niekiran/Embedded-C/blob/master/All_source_codes/target/itm_send_data.c
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
