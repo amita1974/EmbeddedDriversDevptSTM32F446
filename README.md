@@ -8,7 +8,7 @@ Some of the drivers that are planned to be developed as excercise:
 1. GPIOs
 	Input/Output port set/clear/read.
 	Support for various ports configurations e.g. speed, otput type, pull-up/pull down, etc.
-	Interrupts support - (Also with interrupts support initiated from GPIO ports, including the EXTI (External Interrupts) peripheral and the Cortex's NVIC (Nested Interrupts Vector COntroller)).
+	Interrupts support - (Also with interrupts support initiated from GPIO ports, including the EXTI (External Interrupts) peripheral and the Cortex's NVIC (Nested Vector Interrupts Cntroller)).
 2. SPI,
 
 And if time will allow, also
